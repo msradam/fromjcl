@@ -91,8 +91,10 @@ def _build_mvscmd(step: Step) -> list[str]:
 
     # If we have instream data, use echo with pipe
     if instream_content is not None:
+        # Strip trailing whitespace from each line (JCL 80-col padding)
+        cleaned = "\n".join(line.rstrip() for line in instream_content.split("\n"))
         # Escape single quotes in content: ' becomes '\''
-        escaped = instream_content.replace("'", "'\\''")
+        escaped = cleaned.replace("'", "'\\''")
         result.append(f"echo '{escaped}' | {cmd}")
     else:
         result.append(cmd)
