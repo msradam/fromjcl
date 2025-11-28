@@ -17,6 +17,7 @@ pip install fromjcl
 
 ## Quick Start
 
+**Input** (`test.jcl`):
 ```jcl
 //TESTJOB  JOB (ACCT),'TEST',CLASS=A,MSGCLASS=X
 //STEP01   EXEC PGM=IDCAMS
@@ -26,8 +27,25 @@ pip install fromjcl
 /*
 ```
 
-```bash
-$ fromjcl test.jcl --to mvscmd | sed 's/mvscmd/mvscmdauth/' | sh
+**Parse to YAML** (`fromjcl test.jcl --to yaml`):
+```yaml
+name: TESTJOB
+account: (ACCT)
+programmer: TEST
+class_: A
+msgclass: X
+steps:
+- name: STEP01
+  program: IDCAMS
+  dds:
+  - name: SYSPRINT
+    sysout: '*'
+  - name: SYSIN
+    instream: " /* HELLO FROM FROMJCL */"
+```
+
+**Generate and run on z/OS** (`fromjcl test.jcl --to mvscmd | sed 's/mvscmd/mvscmdauth/' | sh`):
+```
 1IDCAMS  SYSTEM SERVICES                                           TIME: 12:00:00        01/01/25     PAGE      1
 0        
   /* HELLO FROM FROMJCL */
@@ -38,14 +56,18 @@ $ fromjcl test.jcl --to mvscmd | sed 's/mvscmd/mvscmdauth/' | sh
 
 ```python
 from fromjcl import parse, Job
-from fromjcl.converters import mvscmd, ansible
 
-job = Job.from_parsed(parse("job.jcl"))
+job = Job.from_parsed(parse("test.jcl"))
 
+print(f"Job '{job.name}' has {len(job.steps)} step(s):")
 for step in job.steps:
-    print(f"{step.name}: {step.program}")
+    dd_names = [dd.name for dd in step.dds]
+    print(f"  {step.name} runs {step.program} with DDs: {', '.join(dd_names)}")
+```
 
-print(mvscmd.convert(job))
+```
+Job 'TESTJOB' has 1 step(s):
+  STEP01 runs IDCAMS with DDs: SYSPRINT, SYSIN
 ```
 
 ## Roadmap
