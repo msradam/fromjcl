@@ -33,7 +33,8 @@ def _build_mvscmd(step: Step) -> list[str]:
     """Build mvscmd command for a step."""
     result = []
     parts = ["mvscmd"]
-    heredocs = []
+    instream_content = None
+    steplib_datasets = []
 
     if step.program:
         parts.append(f"--pgm={step.program}")
@@ -51,36 +52,50 @@ def _build_mvscmd(step: Step) -> list[str]:
         parts.append(f"--args='{parm}'")
 
     for dd in step.dds:
+        # Handle dotted DD names (e.g., STEP1.STEPLIB)
         if "." in dd.name:
-            dd_name = dd.name.split(".")[-1].lower()
+            dd_name = dd.name.split(".")[-1]
         else:
-            dd_name = dd.name.lower()
+            dd_name = dd.name
+
+        dd_name_upper = dd_name.upper()
+        dd_name_lower = dd_name.lower()
+
+        # Handle STEPLIB/JOBLIB specially
+        if dd_name_upper in ("STEPLIB", "JOBLIB"):
+            if dd.datasets:
+                for ds in dd.datasets:
+                    steplib_datasets.append(ds.dsn)
+            continue
 
         if dd.instream is not None:
-            parts.append(f"--{dd_name}=stdin")
-            clean_data = "\n".join(
-                line.rstrip() for line in dd.instream.rstrip("\n").split("\n")
-            )
-            heredocs.append((dd.name.replace(".", "_"), clean_data))
+            parts.append(f"--{dd_name_lower}=stdin")
+            instream_content = dd.instream.rstrip("\n")
         elif dd.dummy:
-            parts.append(f"--{dd_name}=dummy")
+            parts.append(f"--{dd_name_lower}=dummy")
         elif dd.sysout:
-            parts.append(f"--{dd_name}=*")
+            parts.append(f"--{dd_name_lower}=*")
         elif dd.datasets:
             values = [_format_dataset(ds) for ds in dd.datasets]
-            parts.append(f"--{dd_name}={':'.join(values)}")
+            parts.append(f"--{dd_name_lower}={':'.join(values)}")
 
+    # Add steplib if present (concatenated with colons)
+    if steplib_datasets:
+        parts.insert(2, f"--steplib={':'.join(steplib_datasets)}")
+
+    # Build the command
     if len(parts) <= 2:
         cmd = " ".join(parts)
     else:
         cmd = parts[0] + " \\\n    " + " \\\n    ".join(parts[1:])
 
-    result.append(cmd)
-
-    for marker, content in heredocs:
-        result[-1] += f" <<'END_{marker}'"
-        result.append(content)
-        result.append(f"END_{marker}")
+    # If we have instream data, use echo with pipe
+    if instream_content is not None:
+        # Escape single quotes in content: ' becomes '\''
+        escaped = instream_content.replace("'", "'\\''")
+        result.append(f"echo '{escaped}' | {cmd}")
+    else:
+        result.append(cmd)
 
     return result
 
@@ -91,43 +106,45 @@ def _format_dataset(ds: Dataset) -> str:
     status = ds.disposition.status.upper()
 
     if status == "OLD":
-        parts.append("excl")
+        parts.append("EXCL")
     elif status == "MOD":
-        parts.append("mod")
+        parts.append("MOD")
     elif status == "NEW":
-        parts.append("new")
+        parts.append("NEW")
 
         ds_type = ds.dataset_type
         if ds_type:
-            parts.append(f"type={ds_type.lower()}")
+            parts.append(f"TYPE={ds_type.lower()}")
 
         if ds.dcb:
             if ds.dcb.recfm:
-                parts.append(f"recfm={ds.dcb.recfm}")
+                parts.append(f"RECFM={ds.dcb.recfm}")
             if ds.dcb.lrecl:
-                parts.append(f"lrecl={ds.dcb.lrecl}")
+                parts.append(f"LRECL={ds.dcb.lrecl}")
             if ds.dcb.blksize:
-                parts.append(f"blksize={ds.dcb.blksize}")
+                parts.append(f"BLKSIZE={ds.dcb.blksize}")
 
         if ds.space:
             stype = ds.space.type.upper()
-            parts.append(f"primary={ds.space.primary}{stype}")
+            parts.append(f"PRIMARY={ds.space.primary}{stype}")
             if ds.space.secondary:
-                parts.append(f"secondary={ds.space.secondary}{stype}")
+                parts.append(f"SECONDARY={ds.space.secondary}{stype}")
             if (
                 ds.space.directory
                 and ds_type
                 and ds_type.lower() not in ("seq", "basic", "large")
             ):
-                parts.append(f"dirblks={ds.space.directory}")
+                parts.append(f"DIRBLKS={ds.space.directory}")
 
         if ds.volumes:
-            parts.append(f"volumes={','.join(ds.volumes)}")
+            parts.append(f"VOLUMES={','.join(ds.volumes)}")
 
         if ds.disposition.normal:
-            parts.append(f"normdisp={_map_disp(ds.disposition.normal)}")
+            parts.append(f"NORMDISP={_map_disp(ds.disposition.normal)}")
         if ds.disposition.abnormal:
-            parts.append(f"conddisp={_map_disp(ds.disposition.abnormal)}")
+            parts.append(f"CONDDISP={_map_disp(ds.disposition.abnormal)}")
+
+    # SHR is the default - no option needed
 
     return ",".join(parts)
 
@@ -136,7 +153,7 @@ def _map_disp(disp: str) -> str:
     """Map JCL disposition to mvscmd disposition."""
     disp = disp.upper()
     if disp == "CATLG":
-        return "catalog"
+        return "CATALOG"
     elif disp == "UNCATLG":
-        return "uncatalog"
+        return "UNCATALOG"
     return disp.lower()
