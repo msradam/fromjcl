@@ -1,0 +1,33 @@
+[project]
+name = "fromjcl"
+version = "0.1.0"
+description = "Convert JCL to modern formats: mvscmd, Ansible, and more"
+readme = "README.md"
+authors = [
+    { name = "Adam Munawar Rahman", email = "msrahmanadam@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "cffi>=1.0.0",
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "black",
+    "pytest",
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel", "cffi>=1.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+fromjcl = "fromjcl.cli:main"
+

@@ -1,0 +1,23 @@
+//MULTIJOB JOB (ACCT),'MULTI-STEP JOB',CLASS=A,MSGCLASS=A,
+//             MSGLEVEL=(1,1),NOTIFY=&SYSUID
+//*************************************************************
+//* EXAMPLE OF A MULTI-STEP JOB WITH DATASET PASSING
+//*************************************************************
+//STEP01   EXEC PGM=IEBGENER
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD DUMMY
+//SYSUT1   DD DSN=USERID.MASTER.FILE,DISP=SHR
+//SYSUT2   DD DSN=&&TEMP,DISP=(NEW,PASS),
+//            SPACE=(CYL,5,2),
+//            DCB=(RECFM=FB,LRECL=80,BLKSIZE=8000)
+//*
+//STEP02   EXEC PGM=SORT
+//SYSOUT   DD SYSOUT=*
+//SORTIN   DD DSN=&&TEMP,DISP=(OLD,DELETE)
+//SORTOUT  DD DSN=USERID.SORTED.OUTPUT,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(CYL,5,2),
+//            DCB=(RECFM=FB,LRECL=80,BLKSIZE=8000)
+//SYSIN    DD *
+  SORT FIELDS=(1,10,CH,A)
+/*

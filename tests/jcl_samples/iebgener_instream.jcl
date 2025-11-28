@@ -1,0 +1,17 @@
+//LOADDATA JOB (ACCT),'LOAD INSTREAM DATA',CLASS=A,MSGCLASS=X,
+//             NOTIFY=&SYSUID
+//*************************************************************
+//* CREATE DATASET FROM INSTREAM DATA USING IEBGENER
+//*************************************************************
+//STEP01   EXEC PGM=IEBGENER
+//SYSPRINT DD SYSOUT=*
+//SYSIN    DD DUMMY
+//SYSUT1   DD *
+RECORD001 FIRST TEST RECORD
+RECORD002 SECOND TEST RECORD
+RECORD003 THIRD TEST RECORD
+/*
+//SYSUT2   DD DSN=USERID.NEW.TESTDATA,
+//            DISP=(NEW,CATLG,DELETE),
+//            SPACE=(TRK,1,1),
+//            DCB=(RECFM=FB,LRECL=80,BLKSIZE=800)
