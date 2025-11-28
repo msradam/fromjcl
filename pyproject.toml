@@ -1,6 +1,6 @@
 [project]
 name = "fromjcl"
-version = "0.1.0"
+version = "0.1.1"
 description = "Convert JCL to modern formats: mvscmd, Ansible, and more"
 readme = "README.md"
 authors = [
