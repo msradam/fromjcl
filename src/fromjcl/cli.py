@@ -58,7 +58,9 @@ def main():
         output = json.dumps(remove_nulls(job.to_dict()), indent=2, default=str)
     elif args.to == "yaml":
         job = Job.from_parsed(parsed)
-        output = yaml.dump(remove_nulls(job.to_dict()), default_flow_style=False, sort_keys=False)
+        output = yaml.dump(
+            remove_nulls(job.to_dict()), default_flow_style=False, sort_keys=False
+        )
     elif args.to == "mvscmd":
         job = Job.from_parsed(parsed)
         output = mvscmd.convert(job)

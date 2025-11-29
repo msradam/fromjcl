@@ -1,6 +1,7 @@
-"""Convert Job model to mvscmd shell commands."""
+"""fromjcl/converters/mvscmd.py - Convert Job model to mvscmd shell commands."""
 
-from fromjcl.models import Job, Step, DD, Dataset
+from fromjcl.models import Job
+from fromjcl.converters.common import build_mvscmd_command
 
 
 def convert(job: Job) -> str:
@@ -12,7 +13,6 @@ def convert(job: Job) -> str:
         "",
     ]
 
-    # Warn about symbols
     if job.symbols:
         lines.append("# WARNING: This job uses symbolic parameters:")
         for sym, val in job.symbols.items():
@@ -22,140 +22,8 @@ def convert(job: Job) -> str:
 
     for step in job.steps:
         lines.append(f"# Step: {step.name}")
-        cmd_lines = _build_mvscmd(step)
+        cmd_lines = build_mvscmd_command(step)
         lines.extend(cmd_lines)
         lines.append("")
 
     return "\n".join(lines)
-
-
-def _build_mvscmd(step: Step) -> list[str]:
-    """Build mvscmd command for a step."""
-    result = []
-    parts = ["mvscmd"]
-    instream_content = None
-    steplib_datasets = []
-
-    if step.program:
-        parts.append(f"--pgm={step.program}")
-    elif step.proc:
-        result.append(f"# WARNING: PROC={step.proc} cannot be executed by mvscmd.")
-        result.append(f"# Expand the PROC or find the program it calls.")
-        parts.append("--pgm=UNKNOWN")
-
-    if step.parm:
-        parm = step.parm
-        if parm.startswith("'") and parm.endswith("'"):
-            parm = parm[1:-1]
-        elif parm.startswith("('") and parm.endswith("')"):
-            parm = parm[2:-2]
-        parts.append(f"--args='{parm}'")
-
-    for dd in step.dds:
-        # Handle dotted DD names (e.g., STEP1.STEPLIB)
-        if "." in dd.name:
-            dd_name = dd.name.split(".")[-1]
-        else:
-            dd_name = dd.name
-
-        dd_name_upper = dd_name.upper()
-        dd_name_lower = dd_name.lower()
-
-        # Handle STEPLIB/JOBLIB specially
-        if dd_name_upper in ("STEPLIB", "JOBLIB"):
-            if dd.datasets:
-                for ds in dd.datasets:
-                    steplib_datasets.append(ds.dsn)
-            continue
-
-        if dd.instream is not None:
-            parts.append(f"--{dd_name_lower}=stdin")
-            instream_content = dd.instream.rstrip("\n")
-        elif dd.dummy:
-            parts.append(f"--{dd_name_lower}=dummy")
-        elif dd.sysout:
-            parts.append(f"--{dd_name_lower}=*")
-        elif dd.datasets:
-            values = [_format_dataset(ds) for ds in dd.datasets]
-            parts.append(f"--{dd_name_lower}={':'.join(values)}")
-
-    # Add steplib if present (concatenated with colons)
-    if steplib_datasets:
-        parts.insert(2, f"--steplib={':'.join(steplib_datasets)}")
-
-    # Build the command
-    if len(parts) <= 2:
-        cmd = " ".join(parts)
-    else:
-        cmd = parts[0] + " \\\n    " + " \\\n    ".join(parts[1:])
-
-    # If we have instream data, use echo with pipe
-    if instream_content is not None:
-        # Strip trailing whitespace from each line (JCL 80-col padding)
-        cleaned = "\n".join(line.rstrip() for line in instream_content.split("\n"))
-        # Escape single quotes in content: ' becomes '\''
-        escaped = cleaned.replace("'", "'\\''")
-        result.append(f"echo '{escaped}' | {cmd}")
-    else:
-        result.append(cmd)
-
-    return result
-
-
-def _format_dataset(ds: Dataset) -> str:
-    """Format a dataset for mvscmd."""
-    parts = [ds.dsn]
-    status = ds.disposition.status.upper()
-
-    if status == "OLD":
-        parts.append("EXCL")
-    elif status == "MOD":
-        parts.append("MOD")
-    elif status == "NEW":
-        parts.append("NEW")
-
-        ds_type = ds.dataset_type
-        if ds_type:
-            parts.append(f"TYPE={ds_type.lower()}")
-
-        if ds.dcb:
-            if ds.dcb.recfm:
-                parts.append(f"RECFM={ds.dcb.recfm}")
-            if ds.dcb.lrecl:
-                parts.append(f"LRECL={ds.dcb.lrecl}")
-            if ds.dcb.blksize:
-                parts.append(f"BLKSIZE={ds.dcb.blksize}")
-
-        if ds.space:
-            stype = ds.space.type.upper()
-            parts.append(f"PRIMARY={ds.space.primary}{stype}")
-            if ds.space.secondary:
-                parts.append(f"SECONDARY={ds.space.secondary}{stype}")
-            if (
-                ds.space.directory
-                and ds_type
-                and ds_type.lower() not in ("seq", "basic", "large")
-            ):
-                parts.append(f"DIRBLKS={ds.space.directory}")
-
-        if ds.volumes:
-            parts.append(f"VOLUMES={','.join(ds.volumes)}")
-
-        if ds.disposition.normal:
-            parts.append(f"NORMDISP={_map_disp(ds.disposition.normal)}")
-        if ds.disposition.abnormal:
-            parts.append(f"CONDDISP={_map_disp(ds.disposition.abnormal)}")
-
-    # SHR is the default - no option needed
-
-    return ",".join(parts)
-
-
-def _map_disp(disp: str) -> str:
-    """Map JCL disposition to mvscmd disposition."""
-    disp = disp.upper()
-    if disp == "CATLG":
-        return "CATALOG"
-    elif disp == "UNCATLG":
-        return "UNCATALOG"
-    return disp.lower()

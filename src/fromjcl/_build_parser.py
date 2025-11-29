@@ -1,4 +1,4 @@
-"""CFFI build script for JCL parser."""
+"""fromjcl/_build_parser.py - CFFI build script for JCL parser."""
 
 from cffi import FFI
 from pathlib import Path

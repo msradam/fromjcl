@@ -1,4 +1,4 @@
-"""Data models for JCL representation."""
+"""fromjcl/models.py - Data models for JCL representation."""
 
 from dataclasses import dataclass, field, asdict
 from typing import Any
@@ -246,13 +246,16 @@ class Job:
 
         job = cls(name="UNNAMED")
         current_step: Step | None = None
-        pending_dds: list[dict] = []
         current_condition: str | None = None
+
+        # DD concatenation: when multiple DDs should be treated as one,
+        # the first has a name and the rest are unnamed. We accumulate
+        # them here until we hit the next named DD.
+        dd_group: list[dict] = []
 
         for stmt in statements:
             stmt_type = stmt.get("type", "")
-            stmt_name = stmt.get("name", "")
-            stmt_name = stmt_name.strip() if stmt_name else ""
+            stmt_name = (stmt.get("name") or "").strip()
             params = stmt.get("parameters", [])
 
             if stmt_type == "JOB":
@@ -271,18 +274,22 @@ class Job:
                 current_condition = None
 
             elif stmt_type == "EXEC":
+                # Starting a new step. Save the previous one if it exists.
                 if current_step:
-                    _flush_pending_dds(current_step, pending_dds)
+                    # Finish any pending DD concatenation
+                    if dd_group:
+                        current_step.dds.append(DD.from_statements(dd_group))
+                        dd_group = []
                     job.steps.append(current_step)
-                    pending_dds = []
 
+                # Build the new step
                 current_step = Step(name=stmt_name)
                 if current_condition:
                     current_step.condition = current_condition
 
                 for p in params:
-                    key = p["key"].upper() if p["key"] else ""
-                    val = p["value"]
+                    key = (p.get("key") or "").upper()
+                    val = p.get("value")
                     if key == "PGM":
                         current_step.program = val
                     elif key == "PROC":
@@ -299,19 +306,22 @@ class Job:
                         and not current_step.program
                         and not current_step.proc
                     ):
-                        # Implicit proc call: EXEC MYPROC
                         current_step.proc = key
 
             elif stmt_type == "DD" and current_step:
                 if stmt_name:
-                    _flush_pending_dds(current_step, pending_dds)
-                    pending_dds = [stmt]
+                    # Named DD: finish the previous group, start a new one
+                    if dd_group:
+                        current_step.dds.append(DD.from_statements(dd_group))
+                    dd_group = [stmt]
                 else:
-                    # Concatenation: DD without name continues previous
-                    pending_dds.append(stmt)
+                    # Unnamed DD: this is a concatenation, add to current group
+                    dd_group.append(stmt)
 
+        # Don't forget the last step
         if current_step:
-            _flush_pending_dds(current_step, pending_dds)
+            if dd_group:
+                current_step.dds.append(DD.from_statements(dd_group))
             job.steps.append(current_step)
 
         return job

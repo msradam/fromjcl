@@ -1,4 +1,4 @@
-"""JCL Parser - CFFI bindings to the C parser."""
+"""fromjcl/parser.py - JCL Parser - CFFI bindings to the C parser."""
 
 from fromjcl._jclparser import ffi, lib
 

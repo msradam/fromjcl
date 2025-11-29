@@ -1,4 +1,4 @@
-"""Convert Job model to Ansible playbook using zos_mvs_raw."""
+"""fromjcl/converters/ansible.py - Convert Job model to Ansible playbook using zos_mvs_raw."""
 
 import yaml
 from fromjcl.models import Job, Step, DD, Dataset

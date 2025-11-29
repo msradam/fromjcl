@@ -1,4 +1,4 @@
-"""fromjcl - Convert JCL to modern formats."""
+"""fromjcl/__init__.py - Convert JCL to modern formats."""
 
 from fromjcl.parser import parse
 from fromjcl.models import Job
