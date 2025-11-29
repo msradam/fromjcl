@@ -6,4 +6,4 @@ build/
 **/*.egg-info/
 .venv/
 demo/
-.DS_Store
+.DS_Store.python-version
