@@ -243,10 +243,11 @@ uv sync --dev
 
 ## Roadmap
 
-- **Authorized programs** — Auto-detect `mvscmdauth` vs `mvscmd`
+- **Authorized programs** — Auto-detect `mvscmdauth` vs `mvscmd` (currently testing)
 - **System symbols** — Resolve `&SYSUID` to `$USER` in generated scripts
 - **Multiple instream DDs** — Handle steps with more than one `DD *`
 - **PROC expansion** — Inline procedure calls
+- **Conditional statements** - How to handle `COND` params
 
 ## Acknowledgments
 
