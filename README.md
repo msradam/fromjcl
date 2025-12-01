@@ -12,9 +12,30 @@ fromjcl job.jcl --to yaml       # Structured YAML
 
 ## Installation
 
+### From Source
+
 ```bash
-pip install fromjcl
+git clone https://github.com/msradam/fromjcl.git
+cd fromjcl
+pip install .
 ```
+
+This builds the C parser extension and installs the `fromjcl` command.
+
+### With uv
+
+```bash
+git clone https://github.com/msradam/fromjcl.git
+cd fromjcl
+uv sync
+uv run fromjcl --help
+```
+
+### Requirements
+
+- Python 3.10+
+- C compiler (for building the parser extension)
+- cffi (installed automatically as build dependency)
 
 ## Quick Start
 
@@ -210,6 +231,15 @@ for step in job.steps:
 ```
 Job 'TESTJOB' has 1 step(s):
   STEP01 runs IDCAMS with DDs: SYSPRINT, SYSIN
+```
+
+## Development
+
+```bash
+git clone https://github.com/msradam/fromjcl.git
+cd fromjcl
+uv sync --dev
+uv run pytest
 ```
 
 ## Roadmap
