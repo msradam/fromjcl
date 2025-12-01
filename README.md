@@ -239,7 +239,6 @@ Job 'TESTJOB' has 1 step(s):
 git clone https://github.com/msradam/fromjcl.git
 cd fromjcl
 uv sync --dev
-uv run pytest
 ```
 
 ## Roadmap
