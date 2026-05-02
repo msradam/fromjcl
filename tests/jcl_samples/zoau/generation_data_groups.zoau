@@ -1,0 +1,1 @@
+dtouch -tGDG -L255 ${prefix}.GDG

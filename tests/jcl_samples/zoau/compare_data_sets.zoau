@@ -1,0 +1,1 @@
+ddiff "${prefix}.my.diff(fileone)" "${prefix}.my.diff(filetwo)"

@@ -1,0 +1,113 @@
+[project]
+name = "fromjcl"
+version = "0.2.0"
+description = "Parse IBM z/OS JCL and serialize to JSON, YAML, CSV, or roundtrip JCL."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Adam Munawar Rahman", email = "msrahmanadam@gmail.com" }
+]
+requires-python = ">=3.12"
+keywords = ["jcl", "zos", "z/os", "mainframe", "ibm", "mvs", "parser"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Text Processing",
+]
+dependencies = [
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/msradam/fromjcl"
+Repository = "https://github.com/msradam/fromjcl"
+Issues = "https://github.com/msradam/fromjcl/issues"
+
+[dependency-groups]
+# Runtime test deps. Pure Python, install on z/OS.
+test = [
+    "pytest",
+]
+# Workstation dev tooling. ruff and uv are Rust binaries with no z/OS
+# wheel, so this group is for Linux/macOS/Windows development only.
+dev = [
+    "ruff",
+    "mypy",
+    "types-pyyaml",
+    "vulture",
+    "radon>=6.0.1",
+    "interrogate>=1.7",
+]
+
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+fromjcl = "fromjcl.cli:main"
+
+# --- Ruff ---
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "SIM", "S", "FURB"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "SIM115"]
+
+[tool.ruff.format]
+
+# --- Mypy ---
+[tool.mypy]
+python_version = "3.12"
+strict = true
+disallow_untyped_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_reexport = true
+mypy_path = "src"
+
+# --- Vulture ---
+[tool.vulture]
+min_confidence = 80
+paths = ["src/", "tests/"]
+# `synthetic`, `src_dataset` and the JOB-card fields (account,
+# programmer, class_, msgclass, msglevel, notify, region) are accessed
+# via dataclass `asdict()` serialisation or runtime string lookup
+# (`stmt.get("synthetic")`), neither of which vulture can trace.
+ignore_names = [
+    "indentless", "inputFile",
+    "synthetic",
+    "src_dataset",
+    "region", "account", "programmer", "class_",
+    "msgclass", "msglevel", "notify",
+]
+
+# --- Interrogate ---
+[tool.interrogate]
+fail-under = 100
+ignore-init-method = true
+ignore-init-module = true
+ignore-magic = true
+ignore-private = true
+ignore-semiprivate = true
+ignore-nested-functions = true
+exclude = ["src/fromjcl/_scanner.py"]

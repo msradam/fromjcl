@@ -1,0 +1,17 @@
+__pycache__/
+*.so
+*.pyc
+dist/
+build/
+**/*.egg-info/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.DS_Store
+.python-version
+.claude/
+
+# Local IBM doc references, not part of the repo.
+*.pdf
+CLAUDE.md

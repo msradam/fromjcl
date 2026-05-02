@@ -1,0 +1,1 @@
+decho "This text will be written to the PDSE member MEMBER#1 as 3 records" "${prefix}.SAMPLE.TEXT(MEMBER#1)"

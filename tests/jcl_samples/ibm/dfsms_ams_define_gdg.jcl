@@ -1,0 +1,10 @@
+//DEFGDG   JOB  ...
+//STEP1    EXEC PGM=IDCAMS
+//SYSPRINT DD   SYSOUT=A
+//SYSIN    DD   *
+     DEFINE GENERATIONDATAGROUP -
+           (NAME(ICFUCAT1.GDG02) -
+           EMPTY -
+           NOSCRATCH -
+           LIMIT(255))
+/*

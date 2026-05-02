@@ -1,0 +1,8 @@
+//* Print the contents of @@HLQ@@.ZOASAMP.MY.DCAT
+//* to SYSUT2 (the console)
+//*
+//DCAT  EXEC PGM=IEBGENER
+//SYSPRINT DD SYSOUT=*
+//SYSIN   DD DUMMY
+//SYSUT1  DD DSN=@@HLQ@@.ZOASAMP.MY.DCAT,DISP=SHR
+//SYSUT2  DD SYSOUT=*

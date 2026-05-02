@@ -1,0 +1,38 @@
+//USUAL     JOB   A2317P,'MAE BIRDSALL'
+//ASM       EXEC  PGM=IEV90,REGION=256K,         EXECUTES ASSEMBLER
+//           PARM=(OBJECT,NODECK,'LINECOUNT=50')
+//SYSPRINT  DD    SYSOUT=*,DCB=BLKSIZE=3509  PRINT THE ASSEMBLY LISTING
+//SYSPUNCH  DD    SYSOUT=B                   PUNCH THE ASSEMBLY LISTING
+//SYSLIB    DD    DSNAME=SYS1.MACLIB,DISP=SHR    THE MACRO LIBRARY
+//SYSUT1    DD    DSNAME=&&SYSUT1,UNIT=SYSDA,    A WORK DATA SET
+//           SPACE=(CYL,(10,1))
+//SYSLIN    DD    DSNAME=&&OBJECT,UNIT=SYSDA,  THE OUTPUT OBJECT MODULE
+//           SPACE=(TRK,(10,2)),DCB=BLKSIZE=3120,DISP=(,PASS)
+//SYSIN     DD    *                              IN-STREAM SOURCE CODE
+            .
+            .
+            code
+            .
+/*
+//LKED      EXEC  PGM=HEWL,                     EXECUTES LINKAGE EDITOR
+//           PARM='XREF,LIST,LET',COND=(8,LE,ASM)
+//SYSPRINT  DD    SYSOUT=*                       LINKEDIT MAP PRINTOUT
+//SYSLIN    DD    DSNAME=&&OBJECT,DISP=(OLD,DELETE) INPUT OBJECT MODULE
+//SYSUT1    DD    DSNAME=&&SYSUT1,UNIT=SYSDA,    A WORK DATA SET
+//           SPACE=(CYL,(10,1))
+//SYSLMOD   DD    DSNAME=&&LOADMOD,UNIT=SYSDA,   THE OUTPUT LOAD MODULE
+//           DISP=(MOD,PASS),SPACE=(1024,(50,20,1))
+//GO        EXEC  PGM=*.LKED.SYSLMOD,TIME=(,30), EXECUTES THE PROGRAM
+//           COND=((8,LE,ASM),(8,LE,LKED))
+//SYSUDUMP  DD    SYSOUT=*                       IF FAILS, DUMP LISTING
+//SYSPRINT  DD    SYSOUT=*,                      OUTPUT LISTING
+//           DCB=(RECFM=FBA,LRECL=121)
+//OUTPUT    DD    SYSOUT=A,                      PROGRAM DATA OUTPUT
+//           DCB=(LRECL=100,BLKSIZE=3000,RECFM=FBA)
+//INPUT     DD    *                              PROGRAM DATA INPUT
+            .
+            .
+            data
+            .
+/*
+//
