@@ -1,5 +1,15 @@
 name: Release
 
+# Runs on every `v*` tag and on manual dispatch. Builds the wheel and
+# sdist, runs the full quality gate, verifies metadata with twine, and
+# uploads the dist as a workflow artifact.
+#
+# Publishing to PyPI is intentionally manual (`uv run twine upload
+# dist/*` from a checkout) until a Trusted Publisher is registered at
+# https://pypi.org/manage/project/fromjcl/settings/publishing/. When it
+# is, add a publish job that uses pypa/gh-action-pypi-publish with
+# permissions.id-token: write.
+
 on:
   push:
     tags: ["v*"]
@@ -34,24 +44,3 @@ jobs:
           name: dist
           path: dist/
           if-no-files-found: error
-
-  publish:
-    name: Publish to PyPI
-    needs: build
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write
-      attestations: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
-      - name: Publish
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          # The 0.3.0 wheel was uploaded by hand before this workflow
-          # existed; skip-existing lets the same tag retag harmlessly.
-          skip-existing: true
