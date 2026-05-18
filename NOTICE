@@ -1,0 +1,11 @@
+fromjcl
+Copyright 2026 Adam Munawar Rahman
+
+This product includes software derived from JCLParser
+(https://github.com/MikeFultonDev/JCLParser),
+Copyright Mike Fulton, licensed under the Apache License 2.0.
+
+Test corpus under tests/jcl_samples/ibm/ includes verbatim samples
+from IBM/IBM-Z-zOS (https://github.com/IBM/IBM-Z-zOS),
+Copyright IBM Corp., licensed under the Apache License 2.0.
+Each sample retains its original per-file copyright and license header.

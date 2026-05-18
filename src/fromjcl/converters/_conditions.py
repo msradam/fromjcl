@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Translate JCL IF-condition strings to shell (( ... )) and Ansible when:.
 
 STEP.ABEND approximates as rc != 0. STEP.RUN approximates as true.

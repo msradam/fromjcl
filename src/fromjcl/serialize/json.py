@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Render a Job as indented JSON."""
 
 import json as _json

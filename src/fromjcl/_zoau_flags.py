@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Frozen snapshot of ZOAU 1.x command flags (55 verbs, 493 flags).
 
 Originally extracted from manpages; the generator has been removed.

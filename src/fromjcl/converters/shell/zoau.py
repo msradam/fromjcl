@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Convert JCL steps to ZOAU 1.4 shell commands."""
 
 import re

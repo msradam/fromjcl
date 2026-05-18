@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Dump the raw scanner output as JSON, including column metadata.
 
 Useful for debugging the parser or feeding the full record-level detail

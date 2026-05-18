@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Shared utilities for the ZOAU / mvscmd shell converters."""
 
 from fromjcl.models import DD, Dataset, Step

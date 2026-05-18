@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Roundtrip: emit JCL text from a parsed statement list."""
 
 from collections.abc import Callable

@@ -4,7 +4,7 @@ version = "0.3.0"
 description = "Parse IBM z/OS JCL and serialize to JSON, YAML, CSV, or roundtrip JCL."
 readme = "README.md"
 license = "Apache-2.0"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
 authors = [
     { name = "Adam Munawar Rahman", email = "msrahmanadam@gmail.com" }
 ]

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Shared shell scaffold for --to zoau and --to mvscmd.
 
 Both targets emit the same outer structure: a #!/bin/sh header, per-step

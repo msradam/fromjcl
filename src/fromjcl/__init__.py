@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """fromjcl/__init__.py - Convert JCL to modern formats."""
 
 from fromjcl.models import Job

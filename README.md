@@ -140,6 +140,12 @@ Apache-2.0. See [LICENSE](LICENSE).
 
 ## Trademarks
 
-z/OS, IBM, MVS, JCL, and ZOAU are trademarks of International Business
-Machines Corporation. This project is not affiliated with or endorsed
-by IBM.
+IBM, the IBM logo, z/OS, MVS, and Z Open Automation Utilities (ZOAU)
+are trademarks or registered trademarks of International Business
+Machines Corporation, registered in many jurisdictions worldwide.
+Other product and service names might be trademarks of IBM or other
+companies. A current list of IBM trademarks is available at
+<https://www.ibm.com/legal/copytrade>.
+
+This project is an independent community effort. It is not affiliated
+with, endorsed by, or sponsored by IBM.

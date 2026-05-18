@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Render a Job as block-style YAML."""
 
 import yaml as _yaml

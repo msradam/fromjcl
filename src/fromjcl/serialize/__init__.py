@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Foundational output formats. No extras required, no classifier involved.
 
 These serialisers dump the parse tree (or its Job model) without
