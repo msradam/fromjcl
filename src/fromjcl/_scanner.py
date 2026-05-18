@@ -93,6 +93,8 @@ _JES2_PREFIXES = [
 
 
 class ScanState(Enum):
+    # Values mirror the C scanjcl ScanState enum (4 is intentionally
+    # skipped to match the C source's gap). Do not renumber.
     NotContinued = 0
     ContinueParameter = 1
     ContinueString = 2
@@ -131,6 +133,9 @@ class ScannedLine:
 
 @dataclass
 class Stmt:
+    # Field layout and naming mirror the C Statement struct in scanjcl.c.
+    # Keep order stable so the to_dict() output stays diff-comparable
+    # against the C scanner's JSON dump during port verification.
     type: str
     name: str | None = None
     lines: int = 1
@@ -237,9 +242,8 @@ def _word_starts(buf: str, word: str) -> bool:
     return buf.startswith(word)
 
 
-def _read_records(path: Path) -> Iterator[tuple[str, str]]:
+def _records_from_bytes(raw: bytes) -> Iterator[tuple[str, str]]:
     """Yield (original, padded) per record. CRLF is normalised."""
-    raw = Path(path).read_bytes()
     raw = raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
     lines = raw.split(b"\n")
     if lines and lines[-1] == b"":
@@ -591,12 +595,20 @@ class Scanner:
         )
 
     def _scan_jes2_control(self, text: str) -> None:
+        # TODO: cols 73-80 (sequence numbers) are not captured on `/*`
+        # control statements. `//` and `//*` statements preserve them
+        # via ScannedLine.tail; this path does not, so the serializer
+        # pads cols 73-80 with spaces. Affects /*JOBPARM, /*ROUTE,
+        # /*XEQ, /*OUTPUT, /*SETUP, /*MESSAGE, /*SIGNON. See
+        # tests/jcl_samples/ibm/SOURCES.md note for samples blanked
+        # to satisfy byte-exact roundtrip in the meantime.
         self._add_stmt("/*", None)
         body_len = JCL_TXTLEN - PREFIX_LEN + 1
         key = text[PREFIX_LEN : PREFIX_LEN + body_len]
         self._add_kvp(key, None, None, True)
 
     def _scan_jes3_control(self, text: str, column: int) -> None:
+        # TODO: same cols 73-80 limitation as _scan_jes2_control above.
         self._add_stmt("//*", None)
         body = text[column:]
         if _word_starts(body, "DATASET"):
@@ -822,8 +834,14 @@ class Scanner:
             self._cur.record_lens.append(len(self._current_raw))
 
 
-def parse(path: str) -> dict[str, Any]:
+def parse_bytes(data: bytes) -> dict[str, Any]:
+    """Parse JCL from a bytes buffer."""
     scanner = Scanner()
-    for original, padded in _read_records(Path(path)):
+    for original, padded in _records_from_bytes(data):
         scanner.process_record(padded, raw=original)
     return {"statements": [s.to_dict() for s in scanner.stmts]}
+
+
+def parse(path: str) -> dict[str, Any]:
+    """Parse JCL from a file path."""
+    return parse_bytes(Path(path).read_bytes())

@@ -1,0 +1,26 @@
+{
+  "name": "IBMUSERC",
+  "programmer": "CRTVL",
+  "msgclass": "S",
+  "notify": "&SYSUID",
+  "steps": [
+    {
+      "name": "MYPGM",
+      "program": "IEFBR14",
+      "dds": [
+        {
+          "name": "MYDD",
+          "instream": "           .\n           .\n          data\n           .\n           ."
+        },
+        {
+          "name": "NEXTDD",
+          "instream": "           .\n           .\n          data\n           .\n           ."
+        },
+        {
+          "name": "LASTDD",
+          "instream": "           .\n/*\n           .\n//\n         \\\\//\n//\n           .\n           ."
+        }
+      ]
+    }
+  ]
+}

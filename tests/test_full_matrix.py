@@ -26,13 +26,12 @@ ALL = sorted(SAMPLES.rglob("*.jcl"))
 @pytest.mark.parametrize("jcl", ALL, ids=lambda p: str(p.relative_to(SAMPLES)))
 def test_every_serializer_handles_every_sample(jcl: Path) -> None:
     """Per-sample matrix: every serializer must produce sensible output."""
-    narrow = parse(str(jcl))
-    full = parse(str(jcl))
-    job = Job.from_parsed(narrow)
+    parsed = parse(str(jcl))
+    job = Job.from_parsed(parsed)
 
     assert job.steps, f"{jcl.name}: parser produced no steps"
 
-    emitted = jcl_converter.convert(full)
+    emitted = jcl_converter.convert(parsed)
     original = jcl.read_text(encoding="latin-1")
     assert emitted == original, f"{jcl.name}: --to jcl drifted from original"
 

@@ -8,21 +8,34 @@ from fromjcl.models import DD, Dataset, Job, Step
 
 COLUMNS = [
     "job",
+    "account",
+    "programmer",
+    "class",
+    "msgclass",
+    "msglevel",
+    "notify",
     "step",
     "condition",
     "program",
     "proc",
     "parm",
+    "region",
+    "cond",
     "dd",
     "dsn",
+    "path",
     "disp",
     "disp_normal",
     "disp_abnormal",
     "recfm",
     "lrecl",
     "blksize",
+    "dsorg",
     "space_type",
     "space_primary",
+    "space_secondary",
+    "space_directory",
+    "unit",
     "volumes",
     "sysout",
     "dummy",
@@ -37,11 +50,19 @@ def _empty_row() -> dict[str, str]:
 def _step_base(job: Job, step: Step) -> dict[str, str]:
     return {
         "job": job.name,
+        "account": job.account or "",
+        "programmer": job.programmer or "",
+        "class": job.class_ or "",
+        "msgclass": job.msgclass or "",
+        "msglevel": job.msglevel or "",
+        "notify": job.notify or "",
         "step": step.name,
         "condition": step.condition or "",
         "program": step.program or "",
         "proc": step.proc or "",
         "parm": step.parm or "",
+        "region": step.region or "",
+        "cond": step.cond or "",
     }
 
 
@@ -56,6 +77,9 @@ def _dd_base(step_base: dict[str, str], dd: DD) -> dict[str, str]:
 
 
 def _format_instream(instream: str | None) -> str:
+    # Encode newlines as the literal two-char sequence `\n` so the
+    # instream value survives as a single CSV cell. The inverse decode
+    # lives in rejcl.py:_job_dict_from_csv.
     if not instream:
         return ""
     return "\\n".join(line.rstrip() for line in instream.split("\n")).strip("\\n")
@@ -67,6 +91,7 @@ def _row(dd_base: dict[str, str], ds: Dataset | None) -> dict[str, str]:
     if ds is None:
         return row
     row["dsn"] = ds.dsn
+    row["path"] = ds.path or ""
     row["disp"] = ds.disposition.status
     row["disp_normal"] = ds.disposition.normal or ""
     row["disp_abnormal"] = ds.disposition.abnormal or ""
@@ -74,9 +99,14 @@ def _row(dd_base: dict[str, str], ds: Dataset | None) -> dict[str, str]:
         row["recfm"] = ds.dcb.recfm or ""
         row["lrecl"] = str(ds.dcb.lrecl) if ds.dcb.lrecl else ""
         row["blksize"] = str(ds.dcb.blksize) if ds.dcb.blksize else ""
+        row["dsorg"] = ds.dcb.dsorg or ""
     if ds.space:
         row["space_type"] = ds.space.type
         row["space_primary"] = str(ds.space.primary)
+        row["space_secondary"] = str(ds.space.secondary) if ds.space.secondary is not None else ""
+        row["space_directory"] = str(ds.space.directory) if ds.space.directory is not None else ""
+    if ds.unit:
+        row["unit"] = ds.unit
     if ds.volumes:
         row["volumes"] = ",".join(ds.volumes)
     return row

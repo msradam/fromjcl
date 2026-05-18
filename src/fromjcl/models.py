@@ -342,6 +342,9 @@ class Job:
                     elif key == "COND":
                         current_step.cond = val
                     elif val is None and key and not current_step.program and not current_step.proc:
+                        # Bare token on EXEC (no PGM=/PROC= prefix) is
+                        # JCL shorthand for PROC=<token>. The parser
+                        # surfaces it as a value-less key.
                         current_step.proc = key
 
             elif stmt_type == "DD" and current_step:

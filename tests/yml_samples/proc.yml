@@ -1,0 +1,16 @@
+name: UNNAMED
+steps:
+- name: HFS
+  program: IEFBR14
+  dds:
+  - name: HFS01
+    datasets:
+    - dsn: '&NAME.'
+      disposition:
+        status: NEW
+        normal: CATLG
+        abnormal: DELETE
+      dcb:
+        dsorg: PO
+      volumes:
+      - '&VOL.'

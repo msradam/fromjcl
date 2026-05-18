@@ -1,4 +1,9 @@
-"""Output formats that dump the parse tree or Job model without interpreting JCL semantics."""
+"""Foundational output formats. No extras required, no classifier involved.
+
+These serialisers dump the parse tree (or its Job model) without
+interpreting JCL semantics. Compare with fromjcl/converters/, which
+classify each step and translate it into a different ecosystem.
+"""
 
 from typing import Any
 

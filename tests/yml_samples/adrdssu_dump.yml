@@ -1,0 +1,23 @@
+name: IBMDFDSS
+msgclass: H
+steps:
+- name: S1
+  program: ADRDSSU
+  parm: '''TYPRUN=NORUN'''
+  region: 0M
+  dds:
+  - name: TARGET
+    datasets:
+    - dsn: COLIN.BACKUP.DFDSS
+      disposition:
+        status: MOD
+        normal: CATLG
+      space:
+        type: CYL
+        primary: 50
+        secondary: 50
+  - name: SYSPRINT
+    sysout: '*'
+  - name: SYSIN
+    instream: " DUMP -\n   DATASET(INCLUDE(COLIN.JCL,COLIN.WLM,COLIN.C) -\n   BY(DSCHA,EQ,YES))\
+      \ -\n   OUTDDNAME(TARGET) -\n   COMPRESS"
