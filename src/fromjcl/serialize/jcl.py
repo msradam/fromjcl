@@ -18,13 +18,11 @@ def _format_param(kvp: dict[str, Any]) -> str:
     val = kvp.get("value")
     if val is None:
         return key
-    # PARM values must be quoted
+    # PARM values must be wrapped in single quotes per JCL convention.
     if key.upper() == "PARM" and val:
-        # Only add quotes if not already quoted
         if not (val.startswith("'") and val.endswith("'")):
             val = f"'{_escape_parm_value(val)}'"
         else:
-            # Already quoted, escape the content between quotes
             val = f"'{_escape_parm_value(val[1:-1])}'"
     return f"{key}={val}"
 
@@ -161,13 +159,11 @@ def _emit_card(name: str, keyword: str, body: str) -> list[str]:
 
 
 def _emit_quoted_parm(prefix: str, parm_seg: str, sep: str) -> list[str]:
-    """Emit a quoted PARM value with proper continuation using X character.
-    Returns list of lines where last line may be incomplete (for cur tracking)."""
-    # parm_seg is like: PARM='long value here'
-    # Need to break it maintaining quote continuity with X at column 72
-
+    """Emit a quoted PARM value, breaking long values across records with
+    an `X` continuation marker in column 72. The final list element is
+    the in-progress line the caller continues building."""
     parm_key = "PARM='"
-    parm_value = parm_seg[len(parm_key) : -1]  # Remove PARM=' and trailing '
+    parm_value = parm_seg[len(parm_key) : -1]
 
     lines: list[str] = []
     cont = "//" + " " * (CONT_COL - 2)
