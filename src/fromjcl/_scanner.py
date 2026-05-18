@@ -676,15 +676,12 @@ class Scanner:
         if allow_unknown_command:
             # //<blank> form with an unrecognized keyword: either JCLCMD or
             # the null statement (all-blank record).
-            if self._blank_record(text):
+            if self._blank_after_prefix(text):
                 self._scan_simple(text, "", None, column, False)
             else:
                 self._scan_simple(text, "JCLCMD", None, column, False)
         else:
             raise ValueError(f"Invalid JCL record: unknown statement type near '{rest[:16]}'")
-
-    def _blank_record(self, text: str) -> bool:
-        return all(c == " " for c in text[PREFIX_LEN:JCL_TXTLEN])
 
     def _blank_after_prefix(self, text: str) -> bool:
         """True if everything after the // or /* prefix is blank up to col 72."""

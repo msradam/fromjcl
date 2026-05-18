@@ -25,3 +25,8 @@ Base URL: `https://www.ibm.com/docs/en/zoau/1.4?topic=examples-`
 | `write_data_set.jcl`              | `write-to-dataset`                 |
 
 Placeholders like `@@HLQ@@` and `@@VOL@@` are left intact.
+
+Each `.jcl` file ships with a `.zoau` twin that holds the first ZOAU
+shell command shown on the same IBM topic page (the canonical
+equivalent for that JCL job). `tests/test_zoau_oracle.py` asserts that
+our `--to zoau` converter emits the same verb for each pair.
