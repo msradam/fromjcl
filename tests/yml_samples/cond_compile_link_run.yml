@@ -1,0 +1,71 @@
+name: COMPJOB
+account: (ACCT)
+programmer: COMPILE JOB
+class_: A
+steps:
+- name: COMPILE
+  program: IKFCBL00
+  dds:
+  - name: SYSIN
+    datasets:
+    - dsn: SOURCE.COBOL(PROGRAM)
+      disposition:
+        status: SHR
+  - name: SYSLIN
+    datasets:
+    - dsn: '&&OBJSET'
+      disposition:
+        status: NEW
+        normal: PASS
+      space:
+        type: TRK
+        primary: 5
+        secondary: 5
+      unit: SYSDA
+  - name: SYSPRINT
+    sysout: '*'
+- name: LINK
+  program: IEWL
+  dds:
+  - name: SYSLIN
+    datasets:
+    - dsn: '&&OBJSET'
+      disposition:
+        status: OLD
+        normal: DELETE
+  - name: SYSLMOD
+    datasets:
+    - dsn: LOAD.LIBRARY(PROGRAM)
+      disposition:
+        status: SHR
+  - name: SYSPRINT
+    sysout: '*'
+  condition: (COMPILE.RC <= 4)
+- name: EXECUTE
+  program: PROGRAM
+  dds:
+  - name: STEPLIB
+    datasets:
+    - dsn: LOAD.LIBRARY
+      disposition:
+        status: SHR
+  - name: SYSOUT
+    sysout: '*'
+  condition: ((COMPILE.RC <= 4)) AND ((LINK.RC = 0))
+- name: LKERROR
+  program: NOTIFY
+  parm: '''LINK FAILED'''
+  dds:
+  - name: SYSPRINT
+    sysout: '*'
+  condition: ((COMPILE.RC <= 4)) AND (NOT ((LINK.RC = 0)))
+- name: CMPERROR
+  program: NOTIFY
+  parm: '''COMPILE FAILED'''
+  dds:
+  - name: SYSPRINT
+    sysout: '*'
+  condition: NOT ((COMPILE.RC <= 4))
+- name: CLEANUP
+  program: IEFBR14
+  dds: []

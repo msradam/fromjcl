@@ -15,3 +15,7 @@ build/
 # Local IBM doc references, not part of the repo.
 *.pdf
 CLAUDE.md
+
+# Source archives (kept locally, not tracked)
+*.zip
+test_run.log

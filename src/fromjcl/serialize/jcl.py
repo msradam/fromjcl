@@ -7,11 +7,24 @@ JCL_TXTLEN = 71
 CONT_COL = 15
 
 
+def _escape_parm_value(value: str) -> str:
+    """Double apostrophes per JCL convention for PARM= strings."""
+    return value.replace("'", "''")
+
+
 def _format_param(kvp: dict[str, Any]) -> str:
     key = kvp.get("key") or ""
     val = kvp.get("value")
     if val is None:
         return key
+    # PARM values must be quoted
+    if key.upper() == "PARM" and val:
+        # Only add quotes if not already quoted
+        if not (val.startswith("'") and val.endswith("'")):
+            val = f"'{_escape_parm_value(val)}'"
+        else:
+            # Already quoted, escape the content between quotes
+            val = f"'{_escape_parm_value(val[1:-1])}'"
     return f"{key}={val}"
 
 
@@ -56,6 +69,33 @@ def _last_comma_within(seg: str, limit: int) -> int:
     return last
 
 
+def _find_safe_break(seg: str, limit: int) -> int:
+    """Find the last safe break point (space, comma, or operator) before limit.
+    Can break inside quoted strings at spaces. Returns -1 if no safe break exists."""
+    in_quote = False
+    last_space = -1
+    last_comma = -1
+    last_space_in_quote = -1
+
+    for j, c in enumerate(seg[:limit]):
+        if c == "'":
+            in_quote = not in_quote
+        elif c == " ":
+            if in_quote:
+                last_space_in_quote = j
+            else:
+                last_space = j
+        elif c == "," and not in_quote:
+            last_comma = j
+
+    # Prefer comma, then space outside quotes, then space inside quotes
+    if last_comma > 0:
+        return last_comma
+    if last_space > 0:
+        return last_space
+    return last_space_in_quote
+
+
 def _emit_card(name: str, keyword: str, body: str) -> list[str]:
     """Emit a JCL card with the given name, keyword, and body. Wraps when the
     record exceeds 71 characters by breaking at parameter commas; continuation
@@ -84,22 +124,76 @@ def _emit_card(name: str, keyword: str, body: str) -> list[str]:
             lines.append(cur if cur.endswith(",") else cur + ",")
             cur = cont
         else:
-            # Single segment exceeds line; prefer to split at an internal
-            # comma (depth-1 paren-list), else hard-split.
-            avail = JCL_TXTLEN - len(cur)
-            split = _last_comma_within(seg, avail)
-            if split > 0:
-                lines.append(cur + seg[: split + 1])  # include the comma
-                parts[i] = seg[split + 1 :]
-            elif avail > 0:
-                lines.append(cur + seg[:avail])
-                parts[i] = seg[avail:]
+            # Special handling for quoted PARM values
+            if seg.startswith("PARM='") and seg.endswith("'"):
+                lines_from_parm = _emit_quoted_parm(cur, seg, sep)
+                lines.extend(lines_from_parm[:-1])  # All but last
+                cur = lines_from_parm[-1]  # Last becomes current
+                i += 1
             else:
-                lines.append(cur)
-            cur = cont
+                # Single segment exceeds line; try multiple break strategies
+                avail = JCL_TXTLEN - len(cur)
+
+                # Strategy 1: Split at internal comma (depth-1 paren-list)
+                split = _last_comma_within(seg, avail)
+                if split > 0:
+                    lines.append(cur + seg[: split + 1])
+                    parts[i] = seg[split + 1 :]
+                    cur = cont
+                else:
+                    # Strategy 2: Find safe break point (space or comma)
+                    split = _find_safe_break(seg, avail)
+                    if split > 0:
+                        lines.append(cur + seg[: split + 1])
+                        parts[i] = seg[split + 1 :].lstrip()
+                        cur = cont
+                        if len(cur + parts[i]) > JCL_TXTLEN:
+                            continue
+                    else:
+                        # Strategy 3: Force break at available space
+                        lines.append(cur + seg[:avail])
+                        parts[i] = seg[avail:].lstrip()
+                        cur = cont
     if cur != cont:
         lines.append(cur)
     return lines
+
+
+def _emit_quoted_parm(prefix: str, parm_seg: str, sep: str) -> list[str]:
+    """Emit a quoted PARM value with proper continuation using X character.
+    Returns list of lines where last line may be incomplete (for cur tracking)."""
+    # parm_seg is like: PARM='long value here'
+    # Need to break it maintaining quote continuity with X at column 72
+
+    parm_key = "PARM='"
+    parm_value = parm_seg[len(parm_key) : -1]  # Remove PARM=' and trailing '
+
+    lines: list[str] = []
+    cont = "//" + " " * (CONT_COL - 2)
+    cur = prefix + parm_key
+    remaining = parm_value
+
+    while remaining:
+        # Leave column 72 free for the X continuation marker.
+        avail = JCL_TXTLEN - len(cur)
+
+        if len(remaining) <= avail:
+            return lines + [cur + remaining + "'" + sep]
+
+        break_pos = remaining.rfind(" ", 0, avail)
+        if break_pos == -1:
+            # No space to break on; force a hard break at the limit.
+            break_pos = avail
+
+        line = cur + remaining[:break_pos]
+        line = line.ljust(JCL_TXTLEN) + "X"
+        lines.append(line)
+
+        remaining = remaining[break_pos:].lstrip()
+        cur = cont
+
+    # Empty parm value: emit just the closing quote.
+    return lines + [cur + "'"]
 
 
 def _emit_comment(stmt: dict[str, Any], name: str, params: list[dict[str, Any]]) -> list[str]:

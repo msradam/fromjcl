@@ -1,0 +1,64 @@
+{
+  "name": "IBMUSERS",
+  "programmer": "SORT",
+  "msgclass": "S",
+  "msglevel": "(1,1)",
+  "notify": "&SYSUID",
+  "steps": [
+    {
+      "name": "SORT",
+      "program": "SORT",
+      "parm": "'MSGPRT=CRITICAL,LIST'",
+      "dds": [
+        {
+          "name": "SORTIN01",
+          "datasets": [
+            {
+              "dsn": "IBMUSER.MVSCMD.DFSORT.ORIG",
+              "disposition": {
+                "status": "SHR"
+              }
+            }
+          ]
+        },
+        {
+          "name": "SORTIN02",
+          "datasets": [
+            {
+              "dsn": "IBMUSER.MVSCMD.DFSORT.NEW",
+              "disposition": {
+                "status": "SHR"
+              }
+            }
+          ]
+        },
+        {
+          "name": "SORTOUT",
+          "datasets": [
+            {
+              "dsn": "IBMUSER.MVSCMD.DFSORT.MERGE",
+              "disposition": {
+                "status": "SHR"
+              }
+            }
+          ]
+        },
+        {
+          "name": "SYSIN",
+          "datasets": [
+            {
+              "dsn": "IBMUSER.MVSCMD.DFSORT.CMD",
+              "disposition": {
+                "status": "SHR"
+              }
+            }
+          ]
+        },
+        {
+          "name": "SYSOUT",
+          "sysout": "*"
+        }
+      ]
+    }
+  ]
+}

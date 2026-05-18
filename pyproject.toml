@@ -1,6 +1,6 @@
 [project]
 name = "fromjcl"
-version = "0.2.0"
+version = "0.3.0"
 description = "Parse IBM z/OS JCL and serialize to JSON, YAML, CSV, or roundtrip JCL."
 readme = "README.md"
 license = "Apache-2.0"
@@ -22,8 +22,23 @@ classifiers = [
     "Topic :: System :: Systems Administration",
     "Topic :: Text Processing",
 ]
+# Base install ships the JCL parser plus JSON / YAML / CSV / JCL roundtrip
+# emitters. Pure-Python, installable under IBM Open Enterprise Python on
+# z/OS as well as Linux/macOS/Windows.
 dependencies = [
     "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# `pip install fromjcl[zoau]` enables `--to zoau` / `--to mvscmd` and
+# pulls in bashlex so the emitted shell can be structurally validated
+# (every flag must appear in the frozen ZOAU 1.x manpage table).
+#
+# EXPERIMENTAL: ZOAU shell emission is best-effort. Output is marked as
+# such with a banner comment, and bashlex catches flag typos — it does
+# not verify semantic equivalence to the source JCL.
+zoau = [
+    "bashlex>=0.18",
 ]
 
 [project.urls]
@@ -35,6 +50,7 @@ Issues = "https://github.com/msradam/fromjcl/issues"
 # Runtime test deps. Pure Python, install on z/OS.
 test = [
     "pytest",
+    "bashlex>=0.18",
 ]
 # Workstation dev tooling. ruff and uv are Rust binaries with no z/OS
 # wheel, so this group is for Linux/macOS/Windows development only.
@@ -71,6 +87,8 @@ select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "SIM", "S", "FURB"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "SIM115"]
+# Generated table of ZOAU flag names. Long lines are intrinsic.
+"src/fromjcl/_zoau_flags.py" = ["E501"]
 
 [tool.ruff.format]
 
@@ -110,4 +128,4 @@ ignore-magic = true
 ignore-private = true
 ignore-semiprivate = true
 ignore-nested-functions = true
-exclude = ["src/fromjcl/_scanner.py"]
+exclude = ["src/fromjcl/_scanner.py", "src/fromjcl/_zoau_flags.py"]
