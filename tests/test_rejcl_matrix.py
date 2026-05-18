@@ -10,12 +10,12 @@ path together. The flow is:
     assert Job_before == Job_after                 # dataclass equality
 
 Dataclass equality is structural: every Job/Step/DD/Dataset/DCB/Space/
-Disposition field must match. Only the IR-level shape is checked —
-byte-exact JCL roundtrip lives in test_parser_roundtrip.py (json/yaml/csv
+Disposition field must match. Only the IR-level shape is checked here.
+Byte-exact JCL roundtrip lives in test_parser_roundtrip.py (json/yaml/csv
 inherently lose column metadata, comments, and trailing whitespace).
 
 Scope:
-- ibm/, community/, zoau/ samples — real-world JCL the IR is meant to model
+- ibm/, community/, zoau/ samples: real-world JCL the IR is meant to model
 - parser_edge_cases/ samples are SKIPPED: they exercise parser corner
   cases (inline DDs, hex INCLUDE, OUTPUT statements, etc.) the lossy IR
   is not designed to roundtrip through. The byte-exact parser test
@@ -47,47 +47,13 @@ FORMATS = [
     ("csv", csv_out.convert),
 ]
 
-# Known limitations of the rejcl path. Each entry maps a (format, sample
-# stem) pair to the reason the roundtrip can't be a fixed point yet.
-# Listed explicitly so a regression here surfaces — and so the failure
-# inventory is visible to anyone scanning the test file.
-_REJCL_XFAIL: dict[tuple[str, str], str] = {
-    # Samples that exercise IF/THEN/ELSE: rejcl flattens nested IFs into
-    # composite "(A) AND (NOT B)" condition strings that overflow the
-    # JCL 71-column line limit. The serializer's IF emitter does not yet
-    # break long conditions into continuation records, so the re-emitted
-    # JCL is unparseable. Fix is in serialize/jcl.py:_emit_if.
-    ("json", "if_nested_procs"): "IF re-emission exceeds 71-col limit",
-    ("yaml", "if_nested_procs"): "IF re-emission exceeds 71-col limit",
-    ("csv", "if_nested_procs"): "IF re-emission exceeds 71-col limit",
-    # PARM= values with parenthesised lists and embedded quoted
-    # tokens (e.g. PARM=(OBJECT,NODECK,'LINECOUNT=60')) round-trip
-    # through serialize/jcl.py:_format_param, which doubles inner
-    # apostrophes for JCL escape conventions. The serializer's PARM
-    # escaping logic over-doubles when the value already has the
-    # JCL-escaped form coming back through rejcl.
-    ("json", "asm_lked_go_cond"): "PARM with paren-list + quoted token over-escapes",
-    ("yaml", "asm_lked_go_cond"): "PARM with paren-list + quoted token over-escapes",
-    ("csv", "asm_lked_go_cond"): "PARM with paren-list + quoted token over-escapes",
-    # CSV is tabular and has no column for job-level SET symbols, so
-    # samples that declare symbols lose them on the CSV roundtrip.
-    # Fix is to either add a symbols column, emit a synthetic pre-row,
-    # or document the limitation.
-    ("csv", "grs87"): "CSV format drops job-level SET symbols",
-    ("csv", "smf84fmt"): "CSV format drops job-level SET symbols",
-    ("csv", "bcpii_hwirstcx_compile_bind"): "CSV format drops job-level SET symbols",
-    ("csv", "gam_pli_cics_csdup"): "CSV format drops job-level SET symbols",
-    ("csv", "gam_pli_db2_drop_tables"): "CSV format drops job-level SET symbols",
-    ("csv", "kafka_ixyjrpa6_producer"): "CSV format drops job-level SET symbols",
-    ("csv", "zopeneditor_asm_compile_link_run"): "CSV format drops job-level SET symbols",
-    ("csv", "zowe_apilayer_racf_passticket"): "CSV format drops job-level SET symbols",
-    ("csv", "zopeneditor_allocate"): "CSV format drops job-level SET symbols",
-    ("csv", "zopeneditor_asmalloc"): "CSV format drops job-level SET symbols",
-    ("csv", "zopeneditor_include_member"): "CSV format drops job-level SET symbols",
-    ("csv", "zopeneditor_plialloc"): "CSV format drops job-level SET symbols",
-    ("csv", "zopeneditor_rexalloc"): "CSV format drops job-level SET symbols",
-    ("csv", "zopeneditor_run"): "CSV format drops job-level SET symbols",
-}
+# Known limitations of the rejcl roundtrip. Empty: every sample in
+# the ibm/community/zoau corpora round-trips through every format.
+# Earlier entries were resolved by fixes in:
+#   serialize/jcl.py        IF continuation, PARM paren-list passthrough
+#   serialize/csv.py        symbols column, trailing blank line preserve
+#   serialize/__init__.py   instream terminator-newline rule
+_REJCL_XFAIL: dict[tuple[str, str], str] = {}
 
 
 def _parse_jcl_text(text: str) -> Job:

@@ -15,6 +15,7 @@ COLUMNS = [
     "msgclass",
     "msglevel",
     "notify",
+    "symbols",
     "step",
     "condition",
     "program",
@@ -57,6 +58,9 @@ def _step_base(job: Job, step: Step) -> dict[str, str]:
         "msgclass": job.msgclass or "",
         "msglevel": job.msglevel or "",
         "notify": job.notify or "",
+        # Job-level SET symbols flatten to `name=value;name=value` so
+        # the table stays a fixed schema. The rejcl path inverts this.
+        "symbols": ";".join(f"{k}={v}" for k, v in job.symbols.items()),
         "step": step.name,
         "condition": step.condition or "",
         "program": step.program or "",
@@ -83,7 +87,14 @@ def _format_instream(instream: str | None) -> str:
     # lives in rejcl.py:_job_dict_from_csv.
     if not instream:
         return ""
-    return "\\n".join(line.rstrip() for line in instream.split("\n")).strip("\\n")
+    encoded = "\\n".join(line.rstrip() for line in instream.split("\n"))
+    # Strip exactly one trailing "\n" encoding (the record terminator
+    # after the last data line) but keep trailing blank lines, which
+    # encode as a doubled "\n\n". Mirrors the same rule applied in
+    # remove_nulls() for JSON / YAML output.
+    if encoded.endswith("\\n") and not encoded.endswith("\\n\\n"):
+        encoded = encoded[:-2]
+    return encoded
 
 
 def _row(dd_base: dict[str, str], ds: Dataset | None) -> dict[str, str]:

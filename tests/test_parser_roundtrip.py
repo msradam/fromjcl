@@ -1,6 +1,6 @@
 """Parser correctness via roundtrip.
 
-Primary guarantee — *byte-exact roundtrip*:
+Primary guarantee, *byte-exact roundtrip*:
 
     emit(parse(x)) == x
 
@@ -44,7 +44,7 @@ def test_byte_exact_roundtrip(sample: Path) -> None:
     original = sample.read_text(encoding="latin-1")
     emitted = jcl_converter.convert(parse(str(sample)))
     assert emitted == original, (
-        f"{sample.name}: byte-exact roundtrip failed — parser dropped, "
+        f"{sample.name}: byte-exact roundtrip failed. Parser dropped, "
         "altered, or normalised something."
     )
 

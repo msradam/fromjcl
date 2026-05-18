@@ -220,7 +220,7 @@ def format_dataset(ds: Dataset) -> str:
             parts.append(f"PRIMARY={ds.space.primary}{stype}")
             if ds.space.secondary:
                 parts.append(f"SECONDARY={ds.space.secondary}{stype}")
-            # DIRBLKS only meaningful for PDS/PDSE — sequential and
+            # DIRBLKS only meaningful for PDS/PDSE. Sequential and
             # large-format datasets have no directory, so JCL allows
             # the (...,dir) third SPACE arg but mvscmd would reject it.
             if ds.space.directory and ds_type and ds_type.lower() not in ("seq", "basic", "large"):

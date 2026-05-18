@@ -1,7 +1,7 @@
 # fromjcl
 
-Parse IBM z/OS JCL and serialize it to JSON, YAML, CSV, or roundtrip
-back to JCL.
+Parse IBM z/OS JCL into a typed Python model, then serialize it to
+JSON, YAML, CSV, or back to byte-exact JCL.
 
 ```bash
 fromjcl job.jcl --to json
@@ -13,7 +13,10 @@ fromjcl job.jcl --to raw          # parse-tree dump
 
 The parser is a pure-Python port of [Mike Fulton's
 JCLParser](https://github.com/MikeFultonDev/JCLParser) (Apache 2.0).
-Byte-exact roundtrip is enforced by the test corpus on every change.
+Byte-exact roundtrip is enforced on every commit against an 83-sample
+corpus pulled from `github.com/IBM/*`, `github.com/zowe/*`, and
+hand-authored paraphrases (see
+[`tests/jcl_samples/`](tests/jcl_samples/)).
 
 ## Install
 
@@ -21,9 +24,9 @@ Byte-exact roundtrip is enforced by the test corpus on every change.
 pip install fromjcl
 ```
 
-Python 3.12+. The runtime install is pure Python (PyYAML only) so it
-works under IBM Open Enterprise Python on z/OS as well as
-Linux/macOS/Windows.
+Python 3.12+. Runtime deps are `pyyaml` and `typer`. Pure Python, so
+the same wheel installs under IBM Open Enterprise Python on z/OS as
+well as Linux, macOS, and Windows.
 
 ### Optional `[zoau]` extra (experimental)
 
@@ -32,17 +35,20 @@ pip install 'fromjcl[zoau]'
 ```
 
 Enables `--to zoau` and `--to mvscmd`, which translate each step into
-its closest ZOAU shell equivalent (or an mvscmd/mvscmdauth invocation
-when no opinionated mapping exists). Pulls in [bashlex](https://github.com/idank/bashlex)
-to structurally check every flag in the emitted script against a frozen
-ZOAU 1.x manpage table.
+its closest ZOAU shell equivalent (or an `mvscmd`/`mvscmdauth`
+invocation when no opinionated mapping exists). Pulls in
+[bashlex](https://github.com/idank/bashlex) to structurally check
+every flag in the emitted script against a frozen ZOAU 1.x manpage
+table.
 
-**This is experimental.** Every generated script starts with an
-`EXPERIMENTAL` banner. bashlex catches flag typos; it does not verify
-semantic equivalence to the source JCL. Review the output before running
-it against real datasets.
+The output is best-effort. Every generated script starts with an
+`EXPERIMENTAL` banner, and bashlex catches flag typos but does not
+verify semantic equivalence to the source JCL. Review before running
+against real datasets.
 
 ## Quick start
+
+Given `test.jcl`:
 
 ```jcl
 //TESTJOB  JOB (ACCT),'TEST',CLASS=A
@@ -78,6 +84,9 @@ fromjcl job.jcl --to json | jq -r '.steps[].dds[].datasets[]?.dsn'
 
 # datasets being created
 fromjcl job.jcl --to json | jq -r '.steps[].dds[].datasets[]? | select(.disposition.status=="NEW") | .dsn'
+
+# steps that run a specific program
+fromjcl job.jcl --to json | jq -r '.steps[] | select(.program=="IDCAMS") | .name'
 ```
 
 ## Python API
@@ -90,7 +99,11 @@ for step in job.steps:
     print(step.name, step.program, [dd.name for dd in step.dds])
 ```
 
-## Reverse: re-emit JCL from JSON/YAML/CSV
+`Job`, `Step`, `DD`, `Dataset`, `Disposition`, `Space`, and `DCB` are
+dataclasses. They support standard equality, `asdict()`, and structural
+pattern matching.
+
+## Reverse: re-emit JCL from JSON, YAML, or CSV
 
 ```bash
 fromjcl job.json --rejcl              # auto-detects input format
@@ -98,15 +111,16 @@ fromjcl job.yaml --rejcl --from yaml
 fromjcl job.csv  --rejcl --from csv
 ```
 
-The reverse path produces *functionally equivalent* JCL, not byte-exact.
-Comments, blank lines, and column layout are not preserved by the IR
-and so cannot be reconstructed. The test corpus enforces structural
-roundtrip equivalence via every format (see
-`tests/test_rejcl_matrix.py`).
+The reverse path produces *functionally equivalent* JCL, not
+byte-exact. Comments, blank lines, and column layout are lost on the
+forward pass through the IR and cannot be reconstructed. The
+combinatoric matrix in [`tests/test_rejcl_matrix.py`](tests/test_rejcl_matrix.py)
+asserts that `Job → format → JCL → Job` is a fixed point under
+dataclass equality across the entire IBM/community/ZOAU corpus.
 
 ## z/OS notes
 
-JCL input files read via standard z/OS UNIX semantics. If you hit a
+JCL input is read with standard z/OS UNIX semantics. If you hit a
 silent decode failure, check the file tag (`ls -T`) and convert to
 ASCII (`iconv -f IBM-1047 -t ISO8859-1`) before running.
 
@@ -120,22 +134,24 @@ uv sync --all-groups
 tests/check.sh        # ruff format + check, mypy, vulture, pytest
 ```
 
-`test` group is z/OS-installable (pytest + bashlex only). `dev` group
-adds workstation-only tooling (ruff, mypy, vulture, radon, interrogate);
-ruff and uv are Rust binaries with no z/OS build.
+The `test` group is z/OS-installable (pytest + bashlex, both pure
+Python). The `dev` group adds workstation-only tooling (ruff, mypy,
+vulture, radon, interrogate); ruff and uv are Rust binaries with no
+z/OS build.
+
+CI runs the same `tests/check.sh` pipeline on every push and pull
+request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 ## Docs
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): parser layout and IR
-
-## Acknowledgments
-
-The JCL scanner is a Python port of [Mike Fulton's
-JCLParser](https://github.com/MikeFultonDev/JCLParser) (Apache 2.0).
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): parser layout, IR
+  shape, and the byte-exact roundtrip contract
+- [CONTRIBUTING.md](CONTRIBUTING.md): DCO sign-off, PR expectations
+- [SECURITY.md](SECURITY.md): private vulnerability reporting
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 ## Trademarks
 

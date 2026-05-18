@@ -40,7 +40,7 @@ def test_undocumented_flag_surfaces_warning():
 
 
 def test_unknown_verb_does_not_warn():
-    # No manpage for `randomscript` — silently skipped, not flagged.
+    # No manpage for `randomscript`: silently skipped, not flagged.
     assert _validate.validate_shell("randomscript -x foo\n") == []
 
 

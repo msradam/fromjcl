@@ -29,11 +29,11 @@ def test_zoau_and_mvscmd_handle_every_sample(jcl: Path) -> None:
     job = Job.from_parsed(parse(str(jcl)))
     assert job.steps, f"{jcl.name}: parser produced no steps"
 
-    # ZOAU shell — must parse as bash, every flag documented.
+    # ZOAU shell: must parse as bash, every flag documented.
     zoau_out = zoau_conv.convert(job)
     zoau_warnings = _validate.validate_shell(zoau_out)
     assert not zoau_warnings, f"{jcl.name}: zoau output failed validation: {zoau_warnings}"
 
-    # mvscmd shell — non-empty.
+    # mvscmd shell: non-empty.
     mvscmd_out = mvscmd.convert(job)
     assert mvscmd_out.strip(), f"{jcl.name}: mvscmd empty"

@@ -23,7 +23,7 @@ def remove_nulls(obj: object) -> object:
                 v = "\n".join(line.rstrip() for line in v.split("\n"))
                 # Strip the terminator newline only when the last line
                 # has content. A double trailing newline encodes a
-                # trailing blank line in the source — preserve it so
+                # trailing blank line in the source. Preserve it so
                 # rejcl roundtrip is a fixed point.
                 #   "DATA\n"   -> "DATA"     (cosmetic: drop terminator)
                 #   "DATA\n\n" -> "DATA\n\n" (preserve trailing blank)
