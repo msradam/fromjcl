@@ -7,11 +7,26 @@ steps:
   program: IEFBR14
   dds:
   - name: MYDD
-    instream: "           .\n           .\n          data\n           .\n        \
-      \   ."
+    instream: |2-
+                 .
+                 .
+                data
+                 .
+                 .
   - name: NEXTDD
-    instream: "           .\n           .\n          data\n           .\n        \
-      \   ."
+    instream: |2-
+                 .
+                 .
+                data
+                 .
+                 .
   - name: LASTDD
-    instream: "           .\n/*\n           .\n//\n         \\\\//\n//\n         \
-      \  .\n           ."
+    instream: |2-
+                 .
+      /*
+                 .
+      //
+               \\//
+      //
+                 .
+                 .

@@ -64,13 +64,9 @@ def to_shell(jcl_cond: str) -> str:
         if kind == "ABEND":
             return f"{name}_rc != 0"
         if kind == "RUN":
-            # bash `(( 1 ))` evaluates truthy → "always run". A safe
-            # approximation since we can't know at script-emit time
-            # whether the referenced step actually executed.
+            # `(( 1 ))` is bash-truthy: approximate STEP.RUN as always-true.
             return "1"
-        # ABENDCC=Uxxxx : approximate as non-zero; the literal that
-        # follows the comparison is left in place so a reviewer can see
-        # what was intended.
+        # ABENDCC: approximate as non-zero RC, leave literal in a comment.
         return f"{name}_rc != 0 /* ABENDCC */"
 
     s = _step_ref_re().sub(_ref, s)
@@ -101,9 +97,7 @@ def to_ansible(jcl_cond: str) -> str:
             return f"{name}.failed"
         if kind == "RUN":
             return "true"
-        # ABENDCC=Uxxxx : approximate; leave the literal alone so the
-        # comparison still parses (will compare a bool to a string;
-        # always false). Reviewer should see the warning comment.
+        # ABENDCC: approximate as .failed; literal stays so the expression parses.
         return f"{name}.failed"
 
     s = _step_ref_re().sub(_ref, s)

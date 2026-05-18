@@ -58,8 +58,7 @@ def _step_base(job: Job, step: Step) -> dict[str, str]:
         "msgclass": job.msgclass or "",
         "msglevel": job.msglevel or "",
         "notify": job.notify or "",
-        # Job-level SET symbols flatten to `name=value;name=value` so
-        # the table stays a fixed schema. The rejcl path inverts this.
+        # SET symbols flatten to `name=value;name=value` for fixed schema.
         "symbols": ";".join(f"{k}={v}" for k, v in job.symbols.items()),
         "step": step.name,
         "condition": step.condition or "",
@@ -82,16 +81,12 @@ def _dd_base(step_base: dict[str, str], dd: DD) -> dict[str, str]:
 
 
 def _format_instream(instream: str | None) -> str:
-    # Encode newlines as the literal two-char sequence `\n` so the
-    # instream value survives as a single CSV cell. The inverse decode
-    # lives in rejcl.py:_job_dict_from_csv.
+    # Encode newlines as literal `\n` so the value fits one CSV cell.
+    # rejcl.py:_job_dict_from_csv reverses.
     if not instream:
         return ""
     encoded = "\\n".join(line.rstrip() for line in instream.split("\n"))
-    # Strip exactly one trailing "\n" encoding (the record terminator
-    # after the last data line) but keep trailing blank lines, which
-    # encode as a doubled "\n\n". Mirrors the same rule applied in
-    # remove_nulls() for JSON / YAML output.
+    # Same terminator rule as remove_nulls: trailing `\n\n` survives.
     if encoded.endswith("\\n") and not encoded.endswith("\\n\\n"):
         encoded = encoded[:-2]
     return encoded

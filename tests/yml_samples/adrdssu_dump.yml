@@ -19,5 +19,9 @@ steps:
   - name: SYSPRINT
     sysout: '*'
   - name: SYSIN
-    instream: " DUMP -\n   DATASET(INCLUDE(COLIN.JCL,COLIN.WLM,COLIN.C) -\n   BY(DSCHA,EQ,YES))\
-      \ -\n   OUTDDNAME(TARGET) -\n   COMPRESS"
+    instream: |2-
+       DUMP -
+         DATASET(INCLUDE(COLIN.JCL,COLIN.WLM,COLIN.C) -
+         BY(DSCHA,EQ,YES)) -
+         OUTDDNAME(TARGET) -
+         COMPRESS

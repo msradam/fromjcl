@@ -36,10 +36,7 @@ def _walk_commands(node: Any) -> list[list[str]]:
 
 
 def _flag_tokens(words: list[str]) -> list[str]:
-    # Long flags: strip any `=value` so we compare just `--foo`.
-    # Short flags: only accept `-X` where X is alpha. Skips
-    # numeric arguments like `-1` and grouped shorts like `-rf` that
-    # the ZOAU manpage table doesn't enumerate.
+    # Skips numeric args (`-1`) and grouped shorts (`-rf`) since the manpage table lists neither.
     flags: list[str] = []
     for w in words[1:]:
         if w.startswith("--"):
@@ -56,9 +53,7 @@ def validate_shell(text: str) -> list[str]:
     except ImportError:
         return []
 
-    # Strip comment lines before parsing: our own EXPERIMENTAL banner
-    # and # WARNING: prepends can contain quotes and shell metachars
-    # that bashlex would otherwise try (and sometimes fail) to parse.
+    # Strip our own # banners before parsing; they can contain quotes that confuse bashlex.
     body = "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
     if not body.strip():
         return []

@@ -40,9 +40,7 @@ def _convert_step(step: Step, job: Job) -> list[str]:
     pgm = (step.program or "").upper()
     intent = classify_step(step)
 
-    # ISRSUPC has two ZOAU shapes: SRCHFOR → dgrep (handled by the
-    # classifier), CMPCOLM → ddiff (custom logic below). Fall through to
-    # _convert_isrsupc only when the classifier didn't match SRCHFOR.
+    # SRCHFOR maps to dgrep via the classifier; CMPCOLM falls through to ddiff here.
     if pgm == "ISRSUPC" and not isinstance(intent, TextSearch):
         return _convert_isrsupc(step)
 
@@ -286,10 +284,7 @@ def _build_dtouch(ds: Dataset, dsn: str) -> str:
     args: list[str] = []
 
     if ds.dataset_type:
-        # JCL "BASIC" sequential maps to dtouch -tseq (BASIC is the
-        # default sequential flavour); LARGE keeps its own dtouch
-        # flavour. Unknown types default to PDSE, the safest superset
-        # since a PDSE can host both fixed and variable RECFMs.
+        # JCL BASIC sequential maps to -tseq. Unknown types default to PDSE.
         type_map = {"SEQ": "seq", "PDS": "pds", "PDSE": "pdse", "BASIC": "seq", "LARGE": "large"}
         args.append(f"-t{type_map.get(ds.dataset_type.upper(), 'pdse')}")
 

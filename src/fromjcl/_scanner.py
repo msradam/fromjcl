@@ -94,8 +94,7 @@ _JES2_PREFIXES = [
 
 
 class ScanState(Enum):
-    # Values mirror the C scanjcl ScanState enum (4 is intentionally
-    # skipped to match the C source's gap). Do not renumber.
+    # Values mirror the C scanjcl enum (4 intentionally skipped). Do not renumber.
     NotContinued = 0
     ContinueParameter = 1
     ContinueString = 2
@@ -134,9 +133,7 @@ class ScannedLine:
 
 @dataclass
 class Stmt:
-    # Field layout and naming mirror the C Statement struct in scanjcl.c.
-    # Keep order stable so the to_dict() output stays diff-comparable
-    # against the C scanner's JSON dump during port verification.
+    # Field layout mirrors the C Statement struct in scanjcl.c. Keep order stable.
     type: str
     name: str | None = None
     lines: int = 1
@@ -246,10 +243,8 @@ def _word_starts(buf: str, word: str) -> bool:
 def _records_from_bytes(raw: bytes) -> Iterator[tuple[str, str]]:
     """Yield (original, padded) per record. CRLF is normalised."""
     raw = raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
-    # `\x1a` (Ctrl-Z / SUB) is the DOS / EBCDIC end-of-file sentinel.
-    # Files transferred from MVS sometimes carry it as a trailer; treat
-    # it as end-of-stream so the scanner does not invent a synthetic
-    # SYSIN to hold the sentinel byte.
+    # \x1a is the DOS/EBCDIC EOF sentinel. Truncate so it does not
+    # land in synthetic SYSIN.
     eof = raw.find(b"\x1a")
     if eof != -1:
         raw = raw[:eof]
@@ -521,10 +516,7 @@ class Scanner:
         if with_params:
             self._scan_parameters(text, column)
         elif stmt_type == "JCLCMD":
-            # Unrecognized // <something> command. The classifier can't
-            # parse it, but byte-exact roundtrip needs the body. Capture
-            # everything from column to the last non-blank character as
-            # comment_text; the emitter places it back verbatim.
+            # Capture the unrecognised body verbatim so the emitter can replay it.
             s, e = _skip_blanks(text, column, JCL_TXTLEN)
             body = text[s:e] if e > s else ""
             self._add_scanned_line(
@@ -572,16 +564,11 @@ class Scanner:
         frag = text[s:e]
         existing = self._cur.conditional_text or ""
         if not existing:
-            # Record the column where the conditional text begins (only on
-            # the first record of an IF; continuations always start at
-            # PREFIX_LEN+1 / col 16).
+            # Only the first IF record carries a meaningful conditional_col.
             self._cur.conditional_col = s
             self._cur.conditional_text = frag
         else:
-            # JCL splits long IF conditions across continuation records;
-            # the column-3 indent on the continuation acts as a token
-            # separator. Insert a space when joining so `OR\n  COND`
-            # rejoins as `OR COND`, not `ORCOND`.
+            # Continuation indent acts as a token separator: `OR\n  COND` -> `OR COND`.
             self._cur.conditional_text = existing + " " + frag
 
         if complete:
@@ -609,13 +596,7 @@ class Scanner:
         )
 
     def _scan_jes2_control(self, text: str) -> None:
-        # TODO: cols 73-80 (sequence numbers) are not captured on `/*`
-        # control statements. `//` and `//*` statements preserve them
-        # via ScannedLine.tail; this path does not, so the serializer
-        # pads cols 73-80 with spaces. Affects /*JOBPARM, /*ROUTE,
-        # /*XEQ, /*OUTPUT, /*SETUP, /*MESSAGE, /*SIGNON. See
-        # tests/jcl_samples/ibm/SOURCES.md note for samples blanked
-        # to satisfy byte-exact roundtrip in the meantime.
+        # TODO: cols 73-80 sequence numbers are dropped; // and //* preserve them.
         self._add_stmt("/*", None)
         body_len = JCL_TXTLEN - PREFIX_LEN + 1
         key = text[PREFIX_LEN : PREFIX_LEN + body_len]
@@ -707,11 +688,8 @@ class Scanner:
                 if self._is_jes2_control(text, PREFIX_LEN):
                     self._scan_jes2_control(text)
                 elif self._blank_after_prefix(text):
-                    # Bare `/*` line (end-of-data marker between JCL
-                    # statement blocks, or a visual separator). Without
-                    # this branch the line would silently get appended
-                    # to the previous statement's record_lens and emit
-                    # as `//` on the way back out.
+                    # Bare `/*` separator. Capture as its own statement
+                    # so it does not bleed into the previous one.
                     self._scan_jes2_control(text)
             else:
                 self._generate_sysin(text)

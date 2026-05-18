@@ -55,13 +55,7 @@ def convert(text: str, fmt: str | None = None) -> str:
 
 
 def _job_dict_from_csv(text: str) -> dict[str, Any]:
-    # The CSV writer repeats JOB-level fields on every row. Reading
-    # back, take the first non-empty value and ignore the rest; later
-    # rows that disagree are silently dropped.
-    #
-    # The CSV writer repeats JOB-level fields on every row. Reading
-    # back, take the first non-empty value and ignore the rest; later
-    # rows that disagree are silently dropped.
+    # JOB-level fields repeat on every row; first non-empty wins.
     reader = _csv.DictReader(io.StringIO(text))
     job: dict[str, Any] = {"name": "UNNAMED"}
     steps: dict[str, dict[str, Any]] = {}
@@ -80,8 +74,7 @@ def _job_dict_from_csv(text: str) -> dict[str, Any]:
             if row.get(src) and not job.get(dst):
                 job[dst] = row[src]
         if row.get("symbols") and not job.get("symbols"):
-            # Inverse of serialize/csv.py:_step_base. Splits the
-            # `name=value;name=value` form back into a dict.
+            # Inverse of serialize/csv.py:_step_base symbols encoding.
             job["symbols"] = dict(
                 pair.split("=", 1) for pair in row["symbols"].split(";") if "=" in pair
             )
@@ -112,8 +105,7 @@ def _job_dict_from_csv(text: str) -> dict[str, Any]:
             elif row.get("dummy"):
                 dd["dummy"] = True
             elif row.get("instream"):
-                # Inverse of serialize/csv.py:_format_instream. Newlines
-                # were encoded as literal "\n" to survive a single CSV cell.
+                # Inverse of serialize/csv.py:_format_instream.
                 dd["instream"] = row["instream"].replace("\\n", "\n")
             else:
                 dd["datasets"] = []
@@ -246,9 +238,7 @@ def _dd_statements(dd: dict[str, Any]) -> list[dict[str, Any]]:
             }
         ]
     if dd.get("instream") is not None:
-        # TODO: hardcoded "/*" delimiter. JCL allows a custom delimiter
-        # via DLM=, but our IR drops that detail on the forward pass,
-        # so the original DLM= is lost on every rejcl roundtrip.
+        # TODO: hardcoded `/*`. Custom DLM= is dropped on the forward pass.
         return [
             {
                 "type": "DD",
