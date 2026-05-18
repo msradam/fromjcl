@@ -1,0 +1,5 @@
+//ALLOCJ   JOB  1234,'DEMO'
+//STEP1    EXEC PGM=IEFBR14
+//NEW      DD   DSN=USR.WORK.DEMO.PDS,DISP=(NEW,CATLG),
+//              SPACE=(TRK,(10,5,5)),
+//              DCB=(RECFM=FB,LRECL=80,DSORG=PO)

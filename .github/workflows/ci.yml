@@ -26,8 +26,18 @@ jobs:
       - name: Run quality gate
         run: tests/check.sh
 
+      - name: Static security scan (bandit)
+        run: uv run bandit -r src/ -ll
+
+      - name: Dependency vulnerability scan (pip-audit)
+        # PYSEC-2022-42969: ReDoS in `py.path.svnwc`, not invoked by interrogate.
+        run: uv run pip-audit --ignore-vuln PYSEC-2022-42969
+
       - name: Build wheel + sdist
         run: uv build
+
+      - name: Twine metadata check
+        run: uv run twine check dist/*
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

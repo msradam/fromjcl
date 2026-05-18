@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Pure-Python JCL scanner. Port of parser/src/scanjcl.c intended to be 1:1
-with the C implementation: every field the C scanner populates is captured
-and exposed in parse()'s output dict."""
+"""Pure-Python JCL scanner. Port of `parser/src/scanjcl.c` from Mike
+Fulton's JCLParser (https://github.com/MikeFultonDev/JCLParser),
+Apache 2.0. Intended to be 1:1 with the C implementation: every field
+the C scanner populates is captured and exposed in parse()'s output dict."""
 
 from __future__ import annotations
 

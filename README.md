@@ -3,6 +3,8 @@
 Parse IBM z/OS JCL into a typed Python model, then serialize it to
 JSON, YAML, CSV, or back to byte-exact JCL.
 
+![demo](docs/demo.gif)
+
 ```bash
 fromjcl job.jcl --to json
 fromjcl job.jcl --to yaml
@@ -91,17 +93,44 @@ fromjcl job.jcl --to json | jq -r '.steps[] | select(.program=="IDCAMS") | .name
 
 ## Python API
 
-```python
-from fromjcl import parse, Job
+The public surface is what `fromjcl/__init__.py` re-exports. Anything
+under `fromjcl._*` or `fromjcl.converters.*` is internal.
 
+```python
+from fromjcl import parse, Job, to_yaml, to_jcl, from_dump
+
+# Parse + walk the model.
 job = Job.from_parsed(parse("test.jcl"))
 for step in job.steps:
     print(step.name, step.program, [dd.name for dd in step.dds])
+
+# Forward: serialize the Job to a human-readable format.
+print(to_yaml(job))           # YAML
+# to_json(job), to_csv(job) also available
+
+# Byte-exact roundtrip preserves comments, column layout, blank lines.
+# Pass the parse tree, not the Job (the Job IR is lossy by design).
+print(to_jcl(parse("test.jcl")))
+
+# Reverse: take a JSON/YAML/CSV dump and emit JCL (functionally
+# equivalent, not byte-exact).
+print(from_dump(open("job.yaml").read(), "yaml"))
 ```
 
-`Job`, `Step`, `DD`, `Dataset`, `Disposition`, `Space`, and `DCB` are
-dataclasses. They support standard equality, `asdict()`, and structural
-pattern matching.
+Available names:
+
+| Symbol | What it is |
+| --- | --- |
+| `parse(path)`, `parse_bytes(data)` | Parser. Returns a dict with full byte-level metadata. |
+| `Job`, `Step`, `DD`, `Dataset`, `Disposition`, `Space`, `DCB` | Dataclasses. Standard equality, `asdict()`, structural pattern matching. |
+| `Job.from_parsed(tree)` | Build the Job model from a parse tree. |
+| `to_json(job)`, `to_yaml(job)`, `to_csv(job)` | Serialize a Job. |
+| `to_jcl(tree)`, `to_raw(tree)` | Serialize a parse tree (byte-exact / raw dump). |
+| `from_dump(text, fmt)` | Reverse path: text dump back to JCL. |
+
+`[zoau]` extra adds two private modules accessible via the CLI's
+`--to zoau` / `--to mvscmd` paths. They are not part of the stable
+Python API.
 
 ## Reverse: re-emit JCL from JSON, YAML, or CSV
 
