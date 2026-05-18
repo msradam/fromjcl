@@ -1,5 +1,56 @@
 # Changelog
 
+## Unreleased
+
+- Expand `tests/jcl_samples/ibm/` from 14 to 47 samples by pulling from
+  github.com/IBM/* and zowe/* (Apache-2.0 / MIT only). New coverage now
+  spans BCPii (`SYSAFF=`), CICS DFHCSDUP, DB2 utilities (`DSNTIAD`,
+  IKJEFT01 + REXX), DBB COBOL/PL/I build flows, ICSF SORT+REXX,
+  CustomPac SMP/E, Open Enterprise SDK for Apache Kafka, Z OS Client
+  Web Enablement Toolkit, ansible-collections samples, RACF/SAF
+  PassTicket setup (RDEFINE/PERMIT/SETROPTS/SSIGNON), CA-Top Secret
+  equivalent, Z Open Editor sample ALLOCATE/PLIALLOC/ASMALLOC/REXALLOC/
+  RUN/INCLUDE, multi-step PROC with PEND, and a long real-world job
+  (db2ztools DSNTIJRS at 844 lines).
+- Replace 9 IBM-Redbook-transcribed samples with hand-authored
+  paraphrases that exercise the same parser constructs (continuation
+  with `-`, nested IF/ELSE over PROC step refs, `JOB RESTART=` + IF
+  with `¬` negation, `VOLUME=REF=` referbacks, full DISP variants,
+  OUTPUT routing with `*.NAME` referbacks, ASM/LKED/GO with COND= and
+  `PGM=*.LKED.SYSLMOD` referback). The "fair use" framing in
+  `tests/jcl_samples/ibm/SOURCES.md` is gone — only Apache-2.0 / MIT
+  GitHub samples and clean-room paraphrases ship now.
+- Parser fixes surfaced by the expanded corpus:
+  - **Bare `/*` end-of-data delimiters** between DD blocks (not after
+    an in-stream DD) are now recognised as their own statement instead
+    of being silently appended as a continuation record of the previous
+    statement and re-emitted as `//`. Affects `_scanner.py` (new
+    `_blank_after_prefix` dispatch path) and `serialize/jcl.py`
+    (`_reconstruct_jes2` truncates to recorded record length).
+  - **Trailing EBCDIC `\x1a` EOF sentinel** is stripped in
+    `_records_from_bytes` instead of producing a spurious synthetic
+    `//SYSIN DD *` to hold the byte. Source: PC-to-mainframe transfer
+    convention.
+  - **`INCLUDE` statements** now parse their `MEMBER=` parameter
+    correctly. `INCLUDE` was missing from the `with_params` list in
+    `_dispatch`, so the parameters were silently dropped.
+  - **Multi-line `IF` conditions** continued across records (`OR\n
+    cond`) now join with a space separator instead of concatenating
+    `ORcond`. The serializer still emits the joined IF on one line
+    (the multi-line IF re-emission gap is documented in
+    `test_rejcl_matrix.py:_REJCL_XFAIL`).
+- Instream-data serializer fixes:
+  - Blank lines inside in-stream `DD *` blocks now survive the
+    synthesis path (rejcl JCL emission). Previously a `if line:`
+    filter in `serialize/jcl.py:_emit_dd_with_instream` dropped them.
+  - The instream-cleanup in `serialize/__init__.py:remove_nulls`
+    strips at most one terminating newline, so trailing blank lines
+    (encoded as `\n\n`) survive the JSON/YAML/CSV roundtrip.
+- Test count: 652 passing, 20 xfailed (all rejcl-matrix limitations:
+  IF over 71 cols, CSV dropping job SET symbols, paren-list PARM
+  over-escaping). Every sample passes byte-exact `parse → emit → parse`
+  through `test_parser_roundtrip.py`.
+
 ## 0.3.0
 
 - Add the `[zoau]` optional extra:

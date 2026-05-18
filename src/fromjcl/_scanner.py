@@ -246,6 +246,13 @@ def _word_starts(buf: str, word: str) -> bool:
 def _records_from_bytes(raw: bytes) -> Iterator[tuple[str, str]]:
     """Yield (original, padded) per record. CRLF is normalised."""
     raw = raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    # `\x1a` (Ctrl-Z / SUB) is the DOS / EBCDIC end-of-file sentinel.
+    # Files transferred from MVS sometimes carry it as a trailer; treat
+    # it as end-of-stream so the scanner does not invent a synthetic
+    # SYSIN to hold the sentinel byte.
+    eof = raw.find(b"\x1a")
+    if eof != -1:
+        raw = raw[:eof]
     lines = raw.split(b"\n")
     if lines and lines[-1] == b"":
         lines.pop()
@@ -569,7 +576,13 @@ class Scanner:
             # the first record of an IF; continuations always start at
             # PREFIX_LEN+1 / col 16).
             self._cur.conditional_col = s
-        self._cur.conditional_text = existing + frag
+            self._cur.conditional_text = frag
+        else:
+            # JCL splits long IF conditions across continuation records;
+            # the column-3 indent on the continuation acts as a token
+            # separator. Insert a space when joining so `OR\n  COND`
+            # rejoins as `OR COND`, not `ORCOND`.
+            self._cur.conditional_text = existing + " " + frag
 
         if complete:
             i += then_keylen
@@ -649,6 +662,7 @@ class Scanner:
                         "SET",
                         "PROC",
                         "JCLLIB",
+                        "INCLUDE",
                         "COMMAND",
                         "OUTPUT",
                         "XMIT",
@@ -672,6 +686,10 @@ class Scanner:
     def _blank_record(self, text: str) -> bool:
         return all(c == " " for c in text[PREFIX_LEN:JCL_TXTLEN])
 
+    def _blank_after_prefix(self, text: str) -> bool:
+        """True if everything after the // or /* prefix is blank up to col 72."""
+        return all(c == " " for c in text[PREFIX_LEN:JCL_TXTLEN])
+
     def _process_jcl_record(self, text: str) -> None:
         if text[0] == "/":
             if text[1] == "/":
@@ -690,6 +708,13 @@ class Scanner:
                         raise ValueError(f"Invalid JCL record: '//{text[2]}' prefix")
             elif text[1] == "*":
                 if self._is_jes2_control(text, PREFIX_LEN):
+                    self._scan_jes2_control(text)
+                elif self._blank_after_prefix(text):
+                    # Bare `/*` line (end-of-data marker between JCL
+                    # statement blocks, or a visual separator). Without
+                    # this branch the line would silently get appended
+                    # to the previous statement's record_lens and emit
+                    # as `//` on the way back out.
                     self._scan_jes2_control(text)
             else:
                 self._generate_sysin(text)

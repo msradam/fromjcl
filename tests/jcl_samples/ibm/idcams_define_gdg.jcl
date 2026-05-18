@@ -1,10 +1,10 @@
-//DEFGDG   JOB  ...
+//DEFGDGJ  JOB  5678,'GDG-SETUP'
 //STEP1    EXEC PGM=IDCAMS
-//SYSPRINT DD   SYSOUT=A
+//SYSPRINT DD   SYSOUT=*
 //SYSIN    DD   *
      DEFINE GENERATIONDATAGROUP -
-           (NAME(ICFUCAT1.GDG02) -
+           (NAME(USR.WORK.HISTORY) -
            EMPTY -
            NOSCRATCH -
-           LIMIT(255))
+           LIMIT(100))
 /*

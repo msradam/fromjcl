@@ -1,0 +1,8 @@
+//RENAMEJ  JOB   1234,'SAMPLE'
+//STEP1    EXEC  PGM=IDCAMS
+//SYSPRINT DD    SYSOUT=*
+//SYSIN    DD    *
+     ALTER -
+           OLD.PREFIX.*.FILE -
+           NEWNAME(NEW.PREFIX.*.FILE)
+/*

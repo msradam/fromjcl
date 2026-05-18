@@ -11,13 +11,24 @@ from typing import Any
 
 def remove_nulls(obj: object) -> object:
     """Recursively drop dict keys whose values are None, False, or empty dicts.
-    Also rstrips trailing whitespace on instream fields, which the parser
-    preserves for byte-exact roundtrip but is noise in human output."""
+    Also rstrips per-line trailing whitespace on instream fields (the
+    parser preserves col-72 padding for byte-exact roundtrip; the
+    padding is noise in human output) and strips at most one trailing
+    newline (the record terminator after the last line). Trailing
+    *blank* lines stay intact so rejcl roundtrip is a fixed point."""
     if isinstance(obj, dict):
         cleaned: dict[str, Any] = {}
         for k, v in obj.items():
             if k == "instream" and isinstance(v, str):
-                v = "\n".join(line.rstrip() for line in v.split("\n")).rstrip("\n")
+                v = "\n".join(line.rstrip() for line in v.split("\n"))
+                # Strip the terminator newline only when the last line
+                # has content. A double trailing newline encodes a
+                # trailing blank line in the source — preserve it so
+                # rejcl roundtrip is a fixed point.
+                #   "DATA\n"   -> "DATA"     (cosmetic: drop terminator)
+                #   "DATA\n\n" -> "DATA\n\n" (preserve trailing blank)
+                if v.endswith("\n") and not v.endswith("\n\n"):
+                    v = v[:-1]
             cleaned_v = remove_nulls(v)
             if cleaned_v is None or cleaned_v is False:
                 continue
