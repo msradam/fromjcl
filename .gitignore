@@ -20,5 +20,6 @@ CLAUDE.md
 *.zip
 test_run.log
 
-# Marketing assets (LinkedIn visuals, marp deck). Kept locally, not shipped.
+# Marketing assets. Kept locally, not shipped.
 docs/marp/
+docs/demo.tape
