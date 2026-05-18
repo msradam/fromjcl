@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Convert JCL steps to mvscmd shell commands."""
 
 from fromjcl.converters.common import build_mvscmd_command

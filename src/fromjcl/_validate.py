@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Runtime validators for emitted ZOAU / mvscmd shell.
 
 Returns a list of warning strings (empty = clean). The CLI prepends these

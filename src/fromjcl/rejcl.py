@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Reverse path: load a yaml/json/csv dump of a Job and emit JCL.
 
 The forward path is parser.parse() then serialize/<fmt>. The yaml and json

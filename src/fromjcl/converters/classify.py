@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Classify JCL steps into target-neutral intent objects.
 
 Every renderer (zoau, ansible/zos_core, zosmf, makefile) consumes the

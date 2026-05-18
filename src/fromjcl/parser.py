@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """JCL parser entry points.
 
 parse(path) reads from disk; parse_bytes(data) takes a buffer directly

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """Tabular CSV view of a parsed Job: one row per (step, dd, dataset)."""
 
 import csv
