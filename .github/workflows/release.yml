@@ -51,3 +51,7 @@ jobs:
 
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # The 0.3.0 wheel was uploaded by hand before this workflow
+          # existed; skip-existing lets the same tag retag harmlessly.
+          skip-existing: true
