@@ -27,7 +27,6 @@ you agree to the terms of the Developer Certificate of Origin v1.1
 - For ZOAU shell-emission changes, only update the frozen manpage
   table in `src/fromjcl/_zoau_flags.py` when you can cite the ZOAU
   release the new flags ship in.
-- Keep the changelog in `CHANGELOG.md` current.
 
 ## Test corpus additions
 

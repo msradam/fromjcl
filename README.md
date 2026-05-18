@@ -127,7 +127,6 @@ ruff and uv are Rust binaries with no z/OS build.
 ## Docs
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): parser layout and IR
-- [CHANGELOG.md](CHANGELOG.md): release notes
 
 ## Acknowledgments
 
