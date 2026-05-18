@@ -50,7 +50,7 @@ Issues = "https://github.com/msradam/fromjcl/issues"
 [dependency-groups]
 # Runtime test deps. Pure Python, install on z/OS.
 test = [
-    "pytest",
+    "pytest>=9.0.3",  # CVE-2025-71176
     "bashlex>=0.18",
 ]
 # Workstation dev tooling. ruff and uv are Rust binaries with no z/OS
@@ -62,6 +62,10 @@ dev = [
     "vulture",
     "radon>=6.0.1",
     "interrogate>=1.7",
+    "pygments>=2.20.0",  # CVE-2026-4539
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+    "twine>=5.0",
 ]
 
 [build-system]
