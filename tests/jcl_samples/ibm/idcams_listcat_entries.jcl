@@ -1,0 +1,8 @@
+//LSTCATJ  JOB   9012,'CAT-AUDIT'
+//STEP1    EXEC  PGM=IDCAMS
+//SYSPRINT DD    SYSOUT=*
+//SYSIN    DD    *
+     LISTCAT -
+            ENTRIES(USR.WORK.HISTORY.G0001V00) -
+            ALL
+/*

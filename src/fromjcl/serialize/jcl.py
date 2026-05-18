@@ -243,9 +243,12 @@ def _emit_dd_with_instream(
     else:
         data = instream or ""
         delim = "/*"
-    for line in data.split("\n"):
-        if line:
-            lines.append(line.rstrip())
+    # splitlines() drops the trailing newline but preserves blank
+    # lines in the middle (a 3-line block "A\n\nB" yields ["A", "", "B"]).
+    # Blank lines inside instream are data, not statement terminators,
+    # so they must survive the rejcl synthesis path.
+    for line in data.splitlines():
+        lines.append(line.rstrip())
     if delim.strip():
         lines.append(delim)
     return lines
@@ -349,7 +352,14 @@ def _reconstruct_comment(
 def _reconstruct_jes2(stmt: dict[str, Any], target_len: int) -> str:
     params = stmt.get("parameters") or []
     body = (params[0].get("key") or "") if params else ""
-    return _pad_to("/*" + body, target_len)
+    line = "/*" + body
+    # The scanner extracts a fixed 70-char window for the body so it
+    # has trailing pad spaces. The original record may have been
+    # shorter (bare `/*`, or a JES2 control followed by `\n` before
+    # col 72). Trim to the recorded length when shorter.
+    if target_len and target_len < len(line):
+        line = line[:target_len]
+    return _pad_to(line, target_len)
 
 
 def _reconstruct_default(

@@ -1,0 +1,19 @@
+//JOBN      JOB   ...
+//PROCA     PROC
+//PSTEPA    EXEC  PGM=...
+//          PEND
+//PROCB     PROC
+//PSTEPB    EXEC  PGM=...
+//          PEND
+//RUNA      EXEC  PROC=PROCA
+//RUNB      EXEC  PROC=PROCB
+//OUTER     IF  (RUNA.PSTEPA.RC > 4) THEN
+//FAIL1     EXEC  PGM=HANDLE1
+//          ELSE
+//INNER       IF  (RUNB.PSTEPB.ABENDCC=U0050) THEN
+//FAIL2       EXEC  PGM=HANDLE2
+//            ELSE
+//OKAY        EXEC  PGM=NORMAL
+//ENDIN       ENDIF
+//ENDOUT    ENDIF
+//AFTER     EXEC  ...
