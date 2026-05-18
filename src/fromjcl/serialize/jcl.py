@@ -18,9 +18,16 @@ def _format_param(kvp: dict[str, Any]) -> str:
     val = kvp.get("value")
     if val is None:
         return key
-    # PARM values must be wrapped in single quotes per JCL convention.
+    # JCL PARM has three shapes:
+    #   PARM=BARE              -> a single token with no spaces
+    #   PARM='quoted string'   -> a quoted string; inner ' is doubled
+    #   PARM=(t1,t2,'spaced')  -> a comma-separated list inside ()
+    # Only the quoted-string shape needs apostrophe escaping. The
+    # paren-list shape and bare-token shape pass through unchanged.
     if key.upper() == "PARM" and val:
-        if not (val.startswith("'") and val.endswith("'")):
+        if val.startswith("("):
+            pass
+        elif not (val.startswith("'") and val.endswith("'")):
             val = f"'{_escape_parm_value(val)}'"
         else:
             val = f"'{_escape_parm_value(val[1:-1])}'"
@@ -212,9 +219,35 @@ def _emit_if(stmt: dict[str, Any], name: str, params: list[dict[str, Any]]) -> l
     if isinstance(cond, dict):
         cond = cond.get("text")
     cond_text = (cond or "").strip()
-    if name:
-        return [f"//{name:<8} IF {cond_text} THEN"]
-    return [f"//          IF {cond_text} THEN"]
+    first_prefix = f"//{name:<8} IF " if name else "//          IF "
+    full = f"{first_prefix}{cond_text} THEN"
+    if len(full) <= JCL_TXTLEN:
+        return [full]
+    # Long condition. JCL allows IF to wrap across continuation
+    # records at any whitespace boundary; the continuation starts at
+    # col 4 or later (the scanner re-joins the fragments with a
+    # space). Break the text at the last space that fits cols 1..71,
+    # emit the head, then recurse on the tail with a fresh prefix
+    # that mimics the continuation indent the scanner emits.
+    cont_prefix = "//          "
+    lines: list[str] = []
+    remaining = f"{cond_text} THEN"
+    cur_prefix = first_prefix
+    while True:
+        candidate = f"{cur_prefix}{remaining}"
+        if len(candidate) <= JCL_TXTLEN:
+            lines.append(candidate)
+            return lines
+        avail = JCL_TXTLEN - len(cur_prefix)
+        break_pos = remaining.rfind(" ", 0, avail + 1)
+        if break_pos <= 0:
+            # No whitespace to break at. Best effort: emit oversize line
+            # and stop. Caller-side validation will surface this.
+            lines.append(candidate)
+            return lines
+        lines.append(f"{cur_prefix}{remaining[:break_pos]}")
+        remaining = remaining[break_pos + 1 :]
+        cur_prefix = cont_prefix
 
 
 def _emit_else(stmt: dict[str, Any], name: str, params: list[dict[str, Any]]) -> list[str]:

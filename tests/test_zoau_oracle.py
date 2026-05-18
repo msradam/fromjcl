@@ -5,7 +5,7 @@ Each `tests/jcl_samples/*.zoau` holds the first ZOAU command line shown on
 the corresponding IBM topic page. We extract the verb (first whitespace
 token, e.g. `mrm`, `dgrep`) and assert it appears in our converter's output.
 
-This is a coarse check — argument differences are tolerated, since IBM uses
+This is a coarse check. Argument differences are tolerated, since IBM uses
 `${prefix}` placeholders while our JCL uses `@@HLQ@@` literals. The verb
 match is the load-bearing assertion.
 """

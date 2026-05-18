@@ -59,10 +59,9 @@ def _job_dict_from_csv(text: str) -> dict[str, Any]:
     # back, take the first non-empty value and ignore the rest; later
     # rows that disagree are silently dropped.
     #
-    # TODO: CSV has no column for job-level SET symbols, so any sample
-    # using SET will lose its symbols on a CSV roundtrip. The matrix
-    # test in tests/test_rejcl_matrix.py marks the affected samples
-    # xfail with this same reason.
+    # The CSV writer repeats JOB-level fields on every row. Reading
+    # back, take the first non-empty value and ignore the rest; later
+    # rows that disagree are silently dropped.
     reader = _csv.DictReader(io.StringIO(text))
     job: dict[str, Any] = {"name": "UNNAMED"}
     steps: dict[str, dict[str, Any]] = {}
@@ -80,6 +79,12 @@ def _job_dict_from_csv(text: str) -> dict[str, Any]:
         ):
             if row.get(src) and not job.get(dst):
                 job[dst] = row[src]
+        if row.get("symbols") and not job.get("symbols"):
+            # Inverse of serialize/csv.py:_step_base. Splits the
+            # `name=value;name=value` form back into a dict.
+            job["symbols"] = dict(
+                pair.split("=", 1) for pair in row["symbols"].split(";") if "=" in pair
+            )
         step_name = row.get("step") or ""
         if step_name not in steps:
             steps[step_name] = {
@@ -107,7 +112,7 @@ def _job_dict_from_csv(text: str) -> dict[str, Any]:
             elif row.get("dummy"):
                 dd["dummy"] = True
             elif row.get("instream"):
-                # Inverse of serialize/csv.py:_format_instream — newlines
+                # Inverse of serialize/csv.py:_format_instream. Newlines
                 # were encoded as literal "\n" to survive a single CSV cell.
                 dd["instream"] = row["instream"].replace("\\n", "\n")
             else:

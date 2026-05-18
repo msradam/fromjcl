@@ -318,7 +318,7 @@ def _match_dsn_to_dsn(info: _IEBGenerInfo) -> CopyDataset | Fallback | None:
             src_dataset=info.sysut1_dataset,
             dest_dataset=info.sysut2_dataset,
         )
-    # SYSIN has control statements: IEBGENER is filtering, not just copying.
+    # SYSIN has control statements: IEBGENER is filtering, no longer a plain copy.
     return Fallback(reason="IEBGENER: SYSIN has control statements")
 
 

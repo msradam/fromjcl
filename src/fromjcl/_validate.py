@@ -7,7 +7,7 @@ running the output.
 
 Validation uses bashlex, brought in by the optional `[zoau]` extra. If
 bashlex is unavailable (base install) validate_shell returns no warnings
-rather than erroring — the gate at CLI level is the load-bearing check.
+rather than erroring. The gate at CLI level is the load-bearing check.
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ def _walk_commands(node: Any) -> list[list[str]]:
 
 def _flag_tokens(words: list[str]) -> list[str]:
     # Long flags: strip any `=value` so we compare just `--foo`.
-    # Short flags: only accept `-X` where X is alpha — this skips
+    # Short flags: only accept `-X` where X is alpha. Skips
     # numeric arguments like `-1` and grouped shorts like `-rf` that
     # the ZOAU manpage table doesn't enumerate.
     flags: list[str] = []
