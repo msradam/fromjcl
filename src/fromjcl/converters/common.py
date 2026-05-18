@@ -3,11 +3,7 @@
 
 from fromjcl.models import DD, Dataset, Step
 
-# Programs that require APF authorisation (typically because they issue
-# SVCs that touch system control blocks). Under z/OS UNIX, these must
-# run via mvscmdauth, which jumps into an authorised TCB. Plain mvscmd
-# does not have the entitlement. Source: ZOAU 1.4 mvscmd manpage and
-# the IBM z/OS Authorized Assembler Services Guide.
+# APF-authorised programs run via mvscmdauth. Source: ZOAU 1.4 mvscmd manpage.
 AUTHORIZED_PROGRAMS = {
     "IDCAMS",
     "IKJEFT01",
@@ -17,10 +13,8 @@ AUTHORIZED_PROGRAMS = {
     "ARCCTL",
 }
 
-# Utility programs known to run unauthorised. Listed explicitly so
-# needs_authorization() can short-circuit to False instead of returning
-# None (unknown), which would force a manual review of every converted
-# step. Source: same as AUTHORIZED_PROGRAMS.
+# Known unauthorised utilities. Listed so needs_authorization()
+# returns False rather than None (unknown).
 UNAUTHORIZED_PROGRAMS = {
     "IEBCOPY",
     "IEBGENER",
@@ -166,11 +160,7 @@ def build_mvscmd_command(step: Step, force_auth: bool | None = None) -> list[str
 
     steplib_datasets = _collect_steplib(step)
     if steplib_datasets:
-        # Insert at index 2: after `mvscmd` (0) and `--pgm=X` (1) but
-        # before any user-DD --foo=bar args. mvscmd resolves STEPLIB
-        # before opening DDs, so the position only matters for human
-        # readability; we put it up front so a reviewer sees the
-        # library context immediately.
+        # Place --steplib right after --pgm for readability.
         parts.insert(2, _shell_safe_arg("--steplib=", ":".join(steplib_datasets)))
 
     cmd = _format_command_line(parts)
@@ -220,9 +210,7 @@ def format_dataset(ds: Dataset) -> str:
             parts.append(f"PRIMARY={ds.space.primary}{stype}")
             if ds.space.secondary:
                 parts.append(f"SECONDARY={ds.space.secondary}{stype}")
-            # DIRBLKS only meaningful for PDS/PDSE. Sequential and
-            # large-format datasets have no directory, so JCL allows
-            # the (...,dir) third SPACE arg but mvscmd would reject it.
+            # DIRBLKS is PDS/PDSE only; mvscmd rejects it for sequential.
             if ds.space.directory and ds_type and ds_type.lower() not in ("seq", "basic", "large"):
                 parts.append(f"DIRBLKS={ds.space.directory}")
 

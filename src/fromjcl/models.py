@@ -285,9 +285,7 @@ class Job:
                 return None
             return parts[0] if len(parts) == 1 else " AND ".join(f"({p})" for p in parts)
 
-        # DD concatenation: when multiple DDs should be treated as one,
-        # the first has a name and the rest are unnamed. We accumulate
-        # them here until we hit the next named DD.
+        # DD concatenation: named DD followed by unnamed continuations.
         dd_group: list[dict[str, Any]] = []
 
         for stmt in statements:
@@ -343,9 +341,7 @@ class Job:
                     elif key == "COND":
                         current_step.cond = val
                     elif val is None and key and not current_step.program and not current_step.proc:
-                        # Bare token on EXEC (no PGM=/PROC= prefix) is
-                        # JCL shorthand for PROC=<token>. The parser
-                        # surfaces it as a value-less key.
+                        # JCL shorthand: bare token on EXEC means PROC=<token>.
                         current_step.proc = key
 
             elif stmt_type == "DD" and current_step:

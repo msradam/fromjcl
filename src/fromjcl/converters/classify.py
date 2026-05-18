@@ -224,10 +224,7 @@ def _classify_iefbr14(step: Step) -> DatasetOps:
 
         for ds in dd.datasets:
             disp = ds.disposition
-            # JCL DISP semantics for IEFBR14 (the no-op program used
-            # as an allocate/delete trick): NEW+CATLG/KEEP creates the
-            # dataset on success; OLD/MOD/SHR with normal-or-abnormal
-            # DELETE deletes it. We translate only these two shapes.
+            # NEW+CATLG/KEEP allocates; OLD/MOD/SHR + DELETE deletes.
             if disp.status == "NEW" and disp.normal in ("CATLG", "KEEP"):
                 creates.append((name, ds))
             elif (disp.normal == "DELETE" or disp.abnormal == "DELETE") and disp.status in (
@@ -280,9 +277,7 @@ def _gather_iebgener_info(step: Step) -> _IEBGenerInfo:
     return info
 
 
-# Each matcher inspects the gathered info and returns an intent (or
-# None to defer to the next matcher). Order matters: more-specific
-# patterns must come before more-general ones.
+# Matcher order matters: specific patterns first, then more general.
 
 
 def _match_path_to_dsn(info: _IEBGenerInfo) -> CopyDataset | None:

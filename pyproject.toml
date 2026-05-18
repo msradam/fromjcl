@@ -87,7 +87,7 @@ src = ["src"]
 select = ["E", "W", "F", "I", "N", "UP", "B", "C4", "SIM", "S", "FURB"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "SIM115"]
+"tests/**" = ["S101", "S603", "SIM115"]
 # Generated table of ZOAU flag names. Long lines are intrinsic.
 "src/fromjcl/_zoau_flags.py" = ["E501"]
 

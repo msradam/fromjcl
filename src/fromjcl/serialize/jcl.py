@@ -18,12 +18,8 @@ def _format_param(kvp: dict[str, Any]) -> str:
     val = kvp.get("value")
     if val is None:
         return key
-    # JCL PARM has three shapes:
-    #   PARM=BARE              -> a single token with no spaces
-    #   PARM='quoted string'   -> a quoted string; inner ' is doubled
-    #   PARM=(t1,t2,'spaced')  -> a comma-separated list inside ()
-    # Only the quoted-string shape needs apostrophe escaping. The
-    # paren-list shape and bare-token shape pass through unchanged.
+    # Only the quoted-string PARM shape needs apostrophe escaping.
+    # Paren-lists `PARM=(t1,t2,'spaced')` and bare tokens pass through.
     if key.upper() == "PARM" and val:
         if val.startswith("("):
             pass
@@ -223,12 +219,7 @@ def _emit_if(stmt: dict[str, Any], name: str, params: list[dict[str, Any]]) -> l
     full = f"{first_prefix}{cond_text} THEN"
     if len(full) <= JCL_TXTLEN:
         return [full]
-    # Long condition. JCL allows IF to wrap across continuation
-    # records at any whitespace boundary; the continuation starts at
-    # col 4 or later (the scanner re-joins the fragments with a
-    # space). Break the text at the last space that fits cols 1..71,
-    # emit the head, then recurse on the tail with a fresh prefix
-    # that mimics the continuation indent the scanner emits.
+    # Long condition: wrap across continuation records at whitespace.
     cont_prefix = "//          "
     lines: list[str] = []
     remaining = f"{cond_text} THEN"
@@ -241,8 +232,6 @@ def _emit_if(stmt: dict[str, Any], name: str, params: list[dict[str, Any]]) -> l
         avail = JCL_TXTLEN - len(cur_prefix)
         break_pos = remaining.rfind(" ", 0, avail + 1)
         if break_pos <= 0:
-            # No whitespace to break at. Best effort: emit oversize line
-            # and stop. Caller-side validation will surface this.
             lines.append(candidate)
             return lines
         lines.append(f"{cur_prefix}{remaining[:break_pos]}")
@@ -272,10 +261,8 @@ def _emit_dd_with_instream(
     else:
         data = instream or ""
         delim = "/*"
-    # splitlines() drops the trailing newline but preserves blank
-    # lines in the middle (a 3-line block "A\n\nB" yields ["A", "", "B"]).
-    # Blank lines inside instream are data, not statement terminators,
-    # so they must survive the rejcl synthesis path.
+    # splitlines() preserves blank lines (they are instream data,
+    # not statement terminators).
     for line in data.splitlines():
         lines.append(line.rstrip())
     if delim.strip():
@@ -382,10 +369,7 @@ def _reconstruct_jes2(stmt: dict[str, Any], target_len: int) -> str:
     params = stmt.get("parameters") or []
     body = (params[0].get("key") or "") if params else ""
     line = "/*" + body
-    # The scanner extracts a fixed 70-char window for the body so it
-    # has trailing pad spaces. The original record may have been
-    # shorter (bare `/*`, or a JES2 control followed by `\n` before
-    # col 72). Trim to the recorded length when shorter.
+    # The scanner stores a 70-char body window; trim if the source record was shorter.
     if target_len and target_len < len(line):
         line = line[:target_len]
     return _pad_to(line, target_len)

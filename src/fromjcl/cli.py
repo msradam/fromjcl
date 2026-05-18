@@ -171,9 +171,7 @@ def convert(
 
 
 def main() -> int:
-    """Console-script entry point. Wraps typer to return an int exit code so
-    callers (and the pyproject `[project.scripts]` entry) get the same
-    contract the argparse version provided."""
+    """Console-script entry point. Returns an int exit code."""
     try:
         typer.run(convert)
     except SystemExit as e:
