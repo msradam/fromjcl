@@ -1,5 +1,10 @@
 # fromjcl
 
+[![PyPI](https://img.shields.io/pypi/v/fromjcl.svg)](https://pypi.org/project/fromjcl/)
+[![Python](https://img.shields.io/pypi/pyversions/fromjcl.svg)](https://pypi.org/project/fromjcl/)
+[![License](https://img.shields.io/pypi/l/fromjcl.svg)](LICENSE)
+[![CI](https://github.com/msradam/fromjcl/actions/workflows/ci.yml/badge.svg)](https://github.com/msradam/fromjcl/actions/workflows/ci.yml)
+
 Parse IBM z/OS JCL into a typed Python model, then serialize it to
 JSON, YAML, CSV, or back to byte-exact JCL.
 
@@ -175,6 +180,7 @@ request (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)).
 
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): parser layout, IR
   shape, and the byte-exact roundtrip contract
+- [CHANGELOG.md](CHANGELOG.md): release notes
 - [CONTRIBUTING.md](CONTRIBUTING.md): DCO sign-off, PR expectations
 - [SECURITY.md](SECURITY.md): private vulnerability reporting
 
