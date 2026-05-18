@@ -56,14 +56,13 @@ def _require_extra(extra: str, marker_module: str) -> None:
 
 
 def _write_output(output: str, dest: str | None) -> None:
-    """Write output to a file or stdout, ensuring a trailing newline on file output."""
+    """Write output to a file or stdout. Both paths ensure exactly one
+    trailing newline so piping `--to jcl` matches the `-o file` form."""
+    text = output if output.endswith("\n") else output + "\n"
     if dest:
-        with Path(dest).open("w") as f:
-            f.write(output)
-            if not output.endswith("\n"):
-                f.write("\n")
+        Path(dest).write_text(text)
     else:
-        typer.echo(output)
+        sys.stdout.write(text)
 
 
 def _read_text(input_path: str | None) -> str | None:
