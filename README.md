@@ -8,7 +8,7 @@
 Parse IBM z/OS JCL into a typed Python model, then serialize it to
 JSON, YAML, CSV, or back to byte-exact JCL.
 
-![demo](docs/demo.gif)
+![demo](https://raw.githubusercontent.com/msradam/fromjcl/main/docs/demo.gif)
 
 ```bash
 fromjcl job.jcl --to json

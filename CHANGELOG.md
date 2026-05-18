@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 (2026-05-18)
+
+### Fixed
+
+- README demo gif now uses an absolute `raw.githubusercontent.com` URL
+  so PyPI's project page renders it. Relative paths only resolve on
+  GitHub itself.
+
 ## 0.3.0 (2026-05-18)
 
 First public release on PyPI.
