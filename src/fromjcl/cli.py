@@ -169,6 +169,9 @@ def convert(
         _err(str(e))
         raise typer.Exit(code=1) from e
 
+    if not parsed.get("statements"):
+        typer.echo("fromjcl: warning: no JCL statements found in input", err=True)
+
     warnings: list[str] = []
     try:
         if to == OutputFormat.raw:
