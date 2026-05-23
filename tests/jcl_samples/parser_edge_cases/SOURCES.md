@@ -17,3 +17,10 @@ under `testsrc/`. Mike's `tests/regression.sh` enforces byte-exact roundtrip.
 | `inlinedd.jcl`        | `testsrc/inlinedd.skipjcl`   | Inline DD edge case |
 | `splitsubparm.jcl`    | `testsrc/splitsubparm.skipjcl`| DCB subparm split across continuation |
 | `subparm.jcl`         | `testsrc/subparm.skipjcl`    | Multi-line PARM with subparms |
+
+The following files are hand-authored originals written for this project:
+
+| File                      | Notes |
+| ------------------------- | ----- |
+| `lowercase_jobname.jcl`   | Jobname containing lowercase characters (template placeholder pattern); exercises the name-char validation fix in 0.4.0 |
+| `acct_multi_element.jcl`  | JOB card with a parenthesised multi-element account field `(ACCT001,BIN1,BLDG2,DEPT3)`; exercises the paren-nesting fix in 0.4.0 |

@@ -55,6 +55,15 @@ Two kinds of sample live here:
 | `zopeneditor_rexalloc.jcl`             | github.com/IBM/zopeneditor-sample | `JCL/REXALLOC.jcl` (trailing `\x1a` EOF stripped)         |
 | `zopeneditor_run.jcl`                  | github.com/IBM/zopeneditor-sample | `JCL/RUN.jcl` (trailing `\x1a` EOF stripped)              |
 | `zopeneditor_include_member.jcl`       | github.com/IBM/zopeneditor-sample | `JCL/INCLUDE.jcl` (trailing newline added)                |
+| `ansible_hello.jcl`                    | github.com/IBM/z_ansible_collections_samples | `zos_concepts/zos_copy/files/HELLO.jcl` (trailing newline added) |
+| `bankofz_db2drop.jcl`                  | github.com/IBM/Bank-of-Z          | `.setup/jcl/Db2-drop.jcl` (variant without trailing newline fix) |
+| `bcpii_hwirstc1.jcl`                   | github.com/IBM/zOS-BCPii          | `Example-LPARActivate-C/jcl/hwirstc1.jcl` (pre-normalisation variant) |
+| `jes3_stdjes3.jcl`                     | github.com/IBM/zOS-Tools-and-Toys | `zOS-Tools-and-Toys/msglg610/stdjes3.jcl` (cols 73-80 blanked; `\x1a` EOF stripped) |
+| `zna_alloc.jcl`                        | github.com/IBM/zOS-Network-Administrator-Toolkit | `ibmzosmf-ansible-tasks/zos_network_administrator/jcl/ZNAALLOC.jcl` |
+| `zna_allocpds.jcl`                     | github.com/IBM/zOS-Network-Administrator-Toolkit | `ibmzosmf-ansible-tasks/zos_network_administrator/jcl/ZNAALCPD.jcl` |
+| `zna_copy.jcl`                         | github.com/IBM/zOS-Network-Administrator-Toolkit | `ibmzosmf-ansible-tasks/zos_network_administrator/jcl/ZNACOPY.jcl` |
+| `zna_hrecall.jcl`                      | github.com/IBM/zOS-Network-Administrator-Toolkit | `ibmzosmf-ansible-tasks/zos_network_administrator/jcl/ZNAHRECL.jcl` |
+| `zna_terse.jcl`                        | github.com/IBM/zOS-Network-Administrator-Toolkit | `ibmzosmf-ansible-tasks/zos_network_administrator/jcl/ZNATERSE.jcl` — **not vendored**: bare `PARM=PACK` token round-trips lossily through the CSV rejcl path |
 
 All GitHub-sourced samples are vendored under their original Apache 2.0
 license (except `icsf_smf30cex_sort_rexx.jcl`, which is MIT-licensed);
