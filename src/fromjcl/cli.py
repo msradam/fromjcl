@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import sys
 from enum import StrEnum
 from pathlib import Path
@@ -156,13 +157,14 @@ def convert(
         _write_output(result, output, OutputFormat.jcl)
         return
 
+    raw_bytes: bytes | None = None
     try:
         if not input or input == "-":
-            data = _read_bytes(input)
-            if data is None:
+            raw_bytes = _read_bytes(input)
+            if raw_bytes is None:
                 _err("no input: provide a file path or pipe data to stdin")
                 raise typer.Exit(code=2)
-            parsed = parse_bytes(data)
+            parsed = parse_bytes(raw_bytes)
         else:
             parsed = parse(input)
     except (RuntimeError, OSError) as e:
@@ -170,7 +172,16 @@ def convert(
         raise typer.Exit(code=1) from e
 
     if not parsed.get("statements"):
+        if raw_bytes is None and input:
+            with contextlib.suppress(OSError):
+                raw_bytes = Path(input).read_bytes()
         typer.echo("fromjcl: warning: no JCL statements found in input", err=True)
+        if raw_bytes:
+            all_lines = raw_bytes.decode("latin-1", errors="replace").splitlines()
+            for ln in all_lines[:5]:
+                typer.echo(f"  {ln}", err=True)
+            if len(all_lines) > 5:
+                typer.echo(f"  ... ({len(all_lines) - 5} more lines)", err=True)
 
     warnings: list[str] = []
     try:
