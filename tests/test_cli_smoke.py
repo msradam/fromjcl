@@ -78,6 +78,24 @@ def test_help_runs() -> None:
     assert b"fromjcl" in result.stdout.lower() or b"usage" in result.stdout.lower()
 
 
+def test_empty_bytes_stdin_warns_and_exits_zero() -> None:
+    """Piping empty bytes to stdin must warn and exit 0, not crash."""
+    result = _run("--to", "json", stdin_bytes=b"")
+    assert result.returncode == 0
+    assert b"warning" in result.stderr.lower()
+    assert b"no jcl statements" in result.stderr.lower()
+
+
+def test_empty_file_warns(tmp_path: Path) -> None:
+    """An empty JCL file must warn but exit 0 and emit output."""
+    empty_jcl = tmp_path / "empty.jcl"
+    empty_jcl.write_bytes(b"")
+    result = _run(str(empty_jcl), "--to", "json")
+    assert result.returncode == 0
+    assert b"warning" in result.stderr.lower()
+    assert b"no jcl statements" in result.stderr.lower()
+
+
 def test_rejcl_via_subprocess(tmp_path: Path) -> None:
     """Forward then reverse via the actual entry point should produce
     parseable JCL."""

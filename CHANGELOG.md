@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.5.0 (unreleased)
+
+### Added
+
+- **`DD.instream_dlm`** field on the `DD` model: custom `DLM=` delimiters
+  are now preserved through the forward pass. JSON, YAML, and CSV
+  serialisers include the value; the rejcl reverse path emits `DATA,DLM='XX'`
+  and uses the custom terminator when reconstructing JCL.
+- Python 3.13 classifier and CI test matrix entry.
+
+### Fixed
+
+- **Scanner: JES2/3 cols 73-80 sequence numbers** on `/*` control statements
+  (e.g., `/*JOBPARM`, `/*SETUP`) were dropped during roundtrip. The scanner
+  now captures the tail, matching the `//` and `//*` behaviour.
+- **CLI: empty or comment-only JCL** now emits a warning to stderr with a
+  preview of the input (up to 5 lines) and exits 0 rather than silently
+  producing empty output.
+- **CLI: bare Python tracebacks** from I/O errors, bad paths, and serialiser
+  failures now surface as clean `fromjcl: <reason>` messages on stderr.
+
 ## 0.4.0 (2026-05-23)
 
 ### Added

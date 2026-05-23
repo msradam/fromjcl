@@ -193,6 +193,7 @@ class DD:
     sysout: str | None = None
     dummy: bool = False
     instream: str | None = None
+    instream_dlm: str | None = None
 
     @classmethod
     def from_statements(cls, stmts: list[dict[str, Any]]) -> "DD":
@@ -206,6 +207,9 @@ class DD:
         inst = first.get("instream")
         instream = inst.get("bytes") if isinstance(inst, dict) else inst
         is_instream_dd = instream is not None
+        dlm = inst.get("retain_delim") if isinstance(inst, dict) else None
+        if not dlm or dlm in ("/*", "  "):
+            dlm = None
 
         for p in params:
             key = p["key"].upper() if p["key"] else ""
@@ -221,7 +225,7 @@ class DD:
         if dummy:
             return cls(name=name, dummy=True)
         if is_instream_dd:
-            return cls(name=name, instream=instream or "")
+            return cls(name=name, instream=instream or "", instream_dlm=dlm)
 
         datasets = []
         for stmt in stmts:

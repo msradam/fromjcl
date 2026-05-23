@@ -22,5 +22,6 @@ The following files are hand-authored originals written for this project:
 
 | File                      | Notes |
 | ------------------------- | ----- |
-| `lowercase_jobname.jcl`   | Jobname containing lowercase characters (template placeholder pattern); exercises the name-char validation fix in 0.4.0 |
-| `acct_multi_element.jcl`  | JOB card with a parenthesised multi-element account field `(ACCT001,BIN1,BLDG2,DEPT3)`; exercises the paren-nesting fix in 0.4.0 |
+| `lowercase_jobname.jcl`      | Jobname containing lowercase characters (template placeholder pattern); exercises the name-char validation fix in 0.4.0 |
+| `acct_multi_element.jcl`     | JOB card with a parenthesised multi-element account field `(ACCT001,BIN1,BLDG2,DEPT3)`; exercises the paren-nesting fix in 0.4.0 |
+| `dlm_custom_delimiter.jcl`   | `DD DATA,DLM='@@'` with a custom instream terminator; exercises `instream_dlm` capture and JSON/YAML/CSV rejcl roundtrip |

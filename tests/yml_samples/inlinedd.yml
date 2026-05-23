@@ -20,6 +20,7 @@ steps:
                 data
                  .
                  .
+    instream_dlm: '!!'
   - name: LASTDD
     instream: |2-
                  .
@@ -30,3 +31,4 @@ steps:
       //
                  .
                  .
+    instream_dlm: zz

@@ -371,6 +371,12 @@ def _reconstruct_jes2(stmt: dict[str, Any], target_len: int) -> str:
     # The scanner stores a 70-char body window; trim if the source record was shorter.
     if target_len and target_len < len(line):
         line = line[:target_len]
+    scan_lines = stmt.get("scanned_lines") or []
+    tail = (scan_lines[0].get("tail") or "") if scan_lines else ""
+    # body ends at col 72 (JCL_TXTLEN); tail starts at the same column,
+    # so tail[1:] (cols 73-80) are the sequence numbers to restore.
+    if len(tail) > 1:
+        return line + tail[1:]
     return _pad_to(line, target_len)
 
 

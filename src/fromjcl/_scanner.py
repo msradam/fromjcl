@@ -599,22 +599,28 @@ class Scanner:
         )
 
     def _scan_jes2_control(self, text: str) -> None:
-        # TODO: cols 73-80 sequence numbers are dropped; // and //* preserve them.
         self._add_stmt("/*", None)
         body_len = JCL_TXTLEN - PREFIX_LEN + 1
         key = text[PREFIX_LEN : PREFIX_LEN + body_len]
         self._add_kvp(key, None, None, True)
+        # Minimal scan line so _reconstruct_jes2 can recover cols 73-80 via tail.
+        self._add_scanned_line(None, None)
 
     def _scan_jes3_control(self, text: str, column: int) -> None:
-        # TODO: same cols 73-80 limitation as _scan_jes2_control above.
         self._add_stmt("//*", None)
         body = text[column:]
         if _word_starts(body, "DATASET"):
             self.state = ScanState.ContinueJES3Dataset
         else:
-            body_len = JCL_TXTLEN - PREFIX_LEN + 1
-            key = text[PREFIX_LEN : PREFIX_LEN + body_len]
-            self._add_kvp(key, None, None, True)
+            raw_len = len(self._current_raw)
+            content_end = max(column, min(raw_len, JCL_RECLEN))
+            comment_text = self._current_raw[column:content_end] or None
+            self._add_scanned_line(
+                None,
+                comment_text,
+                comment_col=column,
+                comment_end_col=column + len(comment_text or ""),
+            )
 
     def _dispatch(
         self,

@@ -42,6 +42,7 @@ COLUMNS = [
     "sysout",
     "dummy",
     "instream",
+    "instream_dlm",
 ]
 
 
@@ -76,6 +77,7 @@ def _dd_base(step_base: dict[str, str], dd: DD) -> dict[str, str]:
         "sysout": dd.sysout or "",
         "dummy": "true" if dd.dummy else "",
         "instream": _format_instream(dd.instream),
+        "instream_dlm": dd.instream_dlm or "",
     }
 
 

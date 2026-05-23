@@ -14,11 +14,13 @@
         },
         {
           "name": "NEXTDD",
-          "instream": "           .\n           .\n          data\n           .\n           ."
+          "instream": "           .\n           .\n          data\n           .\n           .",
+          "instream_dlm": "!!"
         },
         {
           "name": "LASTDD",
-          "instream": "           .\n/*\n           .\n//\n         \\\\//\n//\n           .\n           ."
+          "instream": "           .\n/*\n           .\n//\n         \\\\//\n//\n           .\n           .",
+          "instream_dlm": "zz"
         }
       ]
     }

@@ -107,6 +107,8 @@ def _job_dict_from_csv(text: str) -> dict[str, Any]:
             elif row.get("instream"):
                 # Inverse of serialize/csv.py:_format_instream.
                 dd["instream"] = row["instream"].replace("\\n", "\n")
+                if row.get("instream_dlm"):
+                    dd["instream_dlm"] = row["instream_dlm"]
             else:
                 dd["datasets"] = []
             step["dds"].append(dd)
@@ -237,13 +239,17 @@ def _dd_statements(dd: dict[str, Any]) -> list[dict[str, Any]]:
             }
         ]
     if dd.get("instream") is not None:
-        # TODO: hardcoded `/*`. Custom DLM= is dropped on the forward pass.
+        dlm = dd.get("instream_dlm") or None
+        if dlm:
+            params = [{"key": "DATA", "value": None}, {"key": "DLM", "value": f"'{dlm}'"}]
+        else:
+            params = [{"key": "*", "value": None}]
         return [
             {
                 "type": "DD",
                 "name": name,
-                "parameters": [{"key": "*", "value": None}],
-                "instream": {"bytes": dd["instream"], "retain_delim": "/*"},
+                "parameters": params,
+                "instream": {"bytes": dd["instream"], "retain_delim": dlm or "/*"},
             }
         ]
     datasets = dd.get("datasets") or []
