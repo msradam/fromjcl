@@ -67,13 +67,21 @@ def _require_extra(extra: str, marker_module: str) -> None:
         raise typer.Exit(code=2) from None
 
 
+def _err(msg: str) -> None:
+    typer.echo(f"fromjcl: {msg}", err=True)
+
+
 def _write_output(output: str, dest: str | None, fmt: OutputFormat | None = None) -> None:
     """Write output to a file or stdout. Both paths ensure exactly one
     trailing newline so piping `--to jcl` matches the `-o file` form.
     When writing to a terminal, syntax-highlights via Rich."""
     text = output if output.endswith("\n") else output + "\n"
     if dest:
-        Path(dest).write_text(text)
+        try:
+            Path(dest).write_text(text)
+        except OSError as e:
+            _err(str(e))
+            raise typer.Exit(code=1) from e
         return
     lexer = _RICH_LEXERS.get(fmt) if fmt else None
     if lexer and _console.is_terminal:
@@ -130,15 +138,20 @@ def convert(
 ) -> None:
     """Parse IBM z/OS JCL and serialize to JSON, YAML, CSV, or roundtrip JCL."""
     if rejcl:
-        text = _read_text(input)
+        try:
+            text = _read_text(input)
+        except OSError as e:
+            _err(str(e))
+            raise typer.Exit(code=1) from e
         if text is None:
+            _err("no input: provide a file path or pipe data to stdin")
             raise typer.Exit(code=2)
         from fromjcl import rejcl as rejcl_mod
 
         try:
             result = rejcl_mod.convert(text, from_fmt.value if from_fmt else None)
         except (ValueError, KeyError) as e:
-            typer.echo(f"Error: {e}", err=True)
+            _err(str(e))
             raise typer.Exit(code=1) from e
         _write_output(result, output, OutputFormat.jcl)
         return
@@ -147,36 +160,41 @@ def convert(
         if not input or input == "-":
             data = _read_bytes(input)
             if data is None:
+                _err("no input: provide a file path or pipe data to stdin")
                 raise typer.Exit(code=2)
             parsed = parse_bytes(data)
         else:
             parsed = parse(input)
-    except RuntimeError as e:
-        typer.echo(f"Error: {e}", err=True)
+    except (RuntimeError, OSError) as e:
+        _err(str(e))
         raise typer.Exit(code=1) from e
 
     warnings: list[str] = []
-    if to == OutputFormat.raw:
-        result = raw_out.convert(parsed)
-    elif to == OutputFormat.json:
-        result = json_out.convert(Job.from_parsed(parsed))
-    elif to == OutputFormat.yaml:
-        result = yaml_out.convert(Job.from_parsed(parsed))
-    elif to == OutputFormat.csv:
-        result = csv_out.convert(Job.from_parsed(parsed))
-    elif to == OutputFormat.jcl:
-        result = jcl_out.convert(parsed)
-    elif to in _ZOAU_FORMATS:
-        _require_extra("zoau", "bashlex")
-        from fromjcl import _validate
-        from fromjcl.converters.shell import mvscmd, zoau
+    try:
+        if to == OutputFormat.raw:
+            result = raw_out.convert(parsed)
+        elif to == OutputFormat.json:
+            result = json_out.convert(Job.from_parsed(parsed))
+        elif to == OutputFormat.yaml:
+            result = yaml_out.convert(Job.from_parsed(parsed))
+        elif to == OutputFormat.csv:
+            result = csv_out.convert(Job.from_parsed(parsed))
+        elif to == OutputFormat.jcl:
+            result = jcl_out.convert(parsed)
+        elif to in _ZOAU_FORMATS:
+            _require_extra("zoau", "bashlex")
+            from fromjcl import _validate
+            from fromjcl.converters.shell import mvscmd, zoau
 
-        job = Job.from_parsed(parsed)
-        result = (mvscmd if to == OutputFormat.mvscmd else zoau).convert(job)
-        warnings = _validate.validate_shell(result)
-        result = _validate.prepend_warnings(result, warnings, comment_prefix="#")
-    else:  # pragma: no cover - Enum exhaustiveness; defensive default.
-        result = ""
+            job = Job.from_parsed(parsed)
+            result = (mvscmd if to == OutputFormat.mvscmd else zoau).convert(job)
+            warnings = _validate.validate_shell(result)
+            result = _validate.prepend_warnings(result, warnings, comment_prefix="#")
+        else:  # pragma: no cover - Enum exhaustiveness; defensive default.
+            result = ""
+    except Exception as e:
+        _err(str(e))
+        raise typer.Exit(code=1) from e
 
     _write_output(result, output, to)
 
@@ -197,6 +215,9 @@ def main() -> int:
         if isinstance(code, int):
             return code
         return 0 if code is None else 1
+    except Exception as e:
+        _err(str(e))
+        return 1
     return 0
 
 
