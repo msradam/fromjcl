@@ -25,7 +25,7 @@ class Disposition:
 
         parts = [p.strip() for p in value.split(",")]
         return cls(
-            status=parts[0] if len(parts) > 0 and parts[0] else "SHR",
+            status=parts[0] if parts and parts[0] else "SHR",
             normal=parts[1] if len(parts) > 1 and parts[1] else None,
             abnormal=parts[2] if len(parts) > 2 and parts[2] else None,
         )
@@ -55,7 +55,7 @@ class Space:
 
         return cls(
             type=space_type,
-            primary=numbers[0] if len(numbers) > 0 else 0,
+            primary=numbers[0] if numbers else 0,
             secondary=numbers[1] if len(numbers) > 1 else None,
             directory=numbers[2] if len(numbers) > 2 else None,
         )
@@ -108,7 +108,7 @@ def _parse_volume(val: str | None) -> list[str] | None:
     if not val:
         return None
     s = val.strip()
-    if s.upper().startswith("REF=") or s.upper().startswith("(REF="):
+    if s.upper().startswith(("REF=", "(REF=")):
         return None
     m = re.search(r"SER\s*=\s*(\([^)]*\)|\S+)", s, re.IGNORECASE)
     if not m:
@@ -364,7 +364,6 @@ class Job:
             key = p["key"] or ""
             val = p["value"]
 
-            # Positional params: account in parens, programmer in quotes
             if key.startswith("("):
                 self.account = key
             elif key.startswith("'"):

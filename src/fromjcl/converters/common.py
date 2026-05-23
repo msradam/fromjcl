@@ -143,8 +143,12 @@ def build_mvscmd_command(step: Step, force_auth: bool | None = None) -> list[str
     if step.program:
         parts.append(f"--pgm={step.program}")
     elif step.proc:
-        result.append(f"# WARNING: PROC={step.proc} cannot be executed by {exe}.")
-        result.append("# Expand the PROC or find the program it calls.")
+        result.extend(
+            (
+                f"# WARNING: PROC={step.proc} cannot be executed by {exe}.",
+                "# Expand the PROC or find the program it calls.",
+            )
+        )
         parts.append("--pgm=UNKNOWN")
 
     if step.parm:

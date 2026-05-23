@@ -150,6 +150,5 @@ def referenced_step_names(items: list[Any]) -> set[str]:
             text = getattr(item, attr, None)
             if not text:
                 continue
-            for m in pattern.finditer(text):
-                refs.add(m.group(1).split(".")[0].lower())
+            refs.update(m.group(1).split(".")[0].lower() for m in pattern.finditer(text))
     return refs

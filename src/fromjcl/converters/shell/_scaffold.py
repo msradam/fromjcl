@@ -33,8 +33,7 @@ def emit(job: Job, render_step: Callable[[Step], list[str]], header_tag: str) ->
         lines.append("# WARNING: This job uses symbolic parameters:")
         for sym, val in job.symbols.items():
             lines.append(f"#   {sym}={val}")
-        lines.append("# You may need to substitute these values manually.")
-        lines.append("")
+        lines.extend(("# You may need to substitute these values manually.", ""))
 
     referenced = _conditions.referenced_step_names(job.steps)
     for cond, steps in _conditions.group_consecutive_by_condition(job.steps):
@@ -67,8 +66,12 @@ def _emit_conditional(
     warn = _conditions._approx_warning(cond)
     if warn:
         out.append(f"# WARNING: {warn}")
-    out.append(f"# Steps: {', '.join(s.name for s in steps)}")
-    out.append(f"if (( {_conditions.to_shell(cond)} )); then")
+    out.extend(
+        (
+            f"# Steps: {', '.join(s.name for s in steps)}",
+            f"if (( {_conditions.to_shell(cond)} )); then",
+        )
+    )
     body_has_command = False
     for step in steps:
         out.append(f"    # Step: {step.name}")
@@ -85,6 +88,5 @@ def _emit_conditional(
     if not body_has_command:
         # bash if ... fi requires at least one command between then/fi.
         out.append("    :")
-    out.append("fi")
-    out.append("")
+    out.extend(("fi", ""))
     return out

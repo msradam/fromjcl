@@ -102,7 +102,6 @@ def _emit_card(name: str, keyword: str, body: str) -> list[str]:
     """Emit a JCL card with the given name, keyword, and body. Wraps when the
     record exceeds 71 characters by breaking at parameter commas; continuation
     lines start at column 16 with a leading //."""
-    name = name or ""
     prefix = f"//{name:<8} {keyword}"
     head = f"{prefix} " if body else prefix
     first = head + body
@@ -400,7 +399,7 @@ def _first_record_prefix(name: str, stype: str, keyword_col: int) -> list[str]:
     """JCLCMD is synthetic; emit nothing and let the body land via comment_text."""
     parts = [name]
     cur_len = 2 + len(name)
-    keyword = "" if stype == "JCLCMD" else (stype or "")
+    keyword = "" if stype == "JCLCMD" else stype
     if keyword_col > 0:
         target = keyword_col
     elif keyword:

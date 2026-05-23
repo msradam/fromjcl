@@ -15,10 +15,10 @@ from fromjcl._scanner import parse_bytes as _parse_bytes
 
 
 def parse(path: str) -> dict[str, Any]:
-    """Return the full parse tree from a JCL file path."""
+    """Raw scan tree from a JCL file; pass to Job.from_parsed() for the typed model."""
     return _parse(path)
 
 
 def parse_bytes(data: bytes) -> dict[str, Any]:
-    """Return the full parse tree from a JCL bytes buffer."""
+    """Parse JCL from a bytes buffer. Returns the same scan tree shape as parse()."""
     return _parse_bytes(data)

@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.4.0 (2026-05-23)
+
+### Added
+
+- Syntax-highlighted terminal output via Rich. `--to json`, `--to yaml`,
+  `--to jcl`, `--to zoau`, and `--to mvscmd` colorize output when stdout
+  is a TTY (monokai theme); piped output is plain text, byte-for-byte
+  identical to file output (`-o`).
+
+### Fixed
+
+- **Scanner: false-positive continuation state** on lines where content
+  reaches column 72 (e.g., template JOB cards with long `MSGCLASS=`
+  values). The scanner incorrectly set `ContinueComment` state, causing
+  the next statement to fail with `Invalid continued comment record`.
+- **Scanner: lowercase jobname rejection.** Jobnames with lowercase
+  characters (common in template JCL, e.g., `TKTxxx1`) were rejected as
+  invalid. Name-character validation now accepts any ASCII letter.
+- **Scanner: multi-element JOB account truncation.** Account fields of
+  the form `(B004273,BIN#,BLDG#,DEPT#)` were split at the first comma
+  inside the parentheses. Paren-nesting is now tracked in the keyword
+  context so the full group is preserved.
+- **CLI: invalid JSON when piping `--to json`** on JCL with instream
+  data. Rich's Pygments JSON lexer was expanding `\n` escape sequences
+  to literal newlines inside string values. Syntax highlighting now
+  activates only for interactive terminals.
+
 ## 0.3.1 (2026-05-18)
 
 ### Fixed

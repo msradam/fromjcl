@@ -227,7 +227,7 @@ def _classify_iefbr14(step: Step) -> DatasetOps:
             # NEW+CATLG/KEEP allocates; OLD/MOD/SHR + DELETE deletes.
             if disp.status == "NEW" and disp.normal in ("CATLG", "KEEP"):
                 creates.append((name, ds))
-            elif (disp.normal == "DELETE" or disp.abnormal == "DELETE") and disp.status in (
+            elif "DELETE" in (disp.normal, disp.abnormal) and disp.status in (
                 "OLD",
                 "MOD",
                 "SHR",
@@ -277,7 +277,7 @@ def _gather_iebgener_info(step: Step) -> _IEBGenerInfo:
     return info
 
 
-# Matcher order matters: specific patterns first, then more general.
+# Matcher order matters.
 
 
 def _match_path_to_dsn(info: _IEBGenerInfo) -> CopyDataset | None:
@@ -466,8 +466,7 @@ def _classify_sort(step: Step) -> TextReplace | Fallback:
     find = joined[findrep.start(1) : findrep.end(1)]
     repl = joined[findrep.start(2) : findrep.end(2)]
 
-    dd_map = build_dd_map(step)
-    sortin = dd_map.get("SORTIN")
+    sortin = build_dd_map(step).get("SORTIN")
     if not (sortin and sortin.datasets):
         return Fallback(reason="SORT: Missing SORTIN dataset")
 
@@ -697,7 +696,7 @@ def _join_continuations(sysin_data: str) -> list[str]:
                 current = ""
             continue
 
-        ends_continued = line.endswith(",") or line.endswith("-")
+        ends_continued = line.endswith((",", "-"))
         if current:
             # Trailing comma joins flush (parsers want the comma); trailing
             # dash inserts a space (IDCAMS treats line-break as whitespace).

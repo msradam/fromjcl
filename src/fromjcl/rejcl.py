@@ -27,7 +27,7 @@ from fromjcl.serialize import jcl as jcl_out
 def detect_format(text: str) -> str:
     """Sniff yaml/json/csv from the leading bytes."""
     s = text.lstrip()
-    if s.startswith("{") or s.startswith("["):
+    if s.startswith(("{", "[")):
         return "json"
     first_line = s.split("\n", 1)[0].strip()
     if first_line.startswith("job,") and "step" in first_line:
@@ -208,7 +208,6 @@ def _exec_statement(step: dict[str, Any]) -> dict[str, Any]:
     elif step.get("proc"):
         params.append({"key": "PROC", "value": step["proc"]})
 
-    # Preserve order from input dict by iterating through step keys
     param_map = {"parm": "PARM", "region": "REGION", "cond": "COND"}
     for key in step:
         if key in param_map:
@@ -250,16 +249,10 @@ def _dd_statements(dd: dict[str, Any]) -> list[dict[str, Any]]:
     datasets = dd.get("datasets") or []
     if not datasets:
         return [{"type": "DD", "name": name, "parameters": []}]
-    out: list[dict[str, Any]] = []
-    for i, ds in enumerate(datasets):
-        out.append(
-            {
-                "type": "DD",
-                "name": name if i == 0 else "",
-                "parameters": _dataset_params(ds),
-            }
-        )
-    return out
+    return [
+        {"type": "DD", "name": name if i == 0 else "", "parameters": _dataset_params(ds)}
+        for i, ds in enumerate(datasets)
+    ]
 
 
 def _dataset_params(ds: dict[str, Any]) -> list[dict[str, Any]]:

@@ -84,12 +84,10 @@ def _render_dataset_ops(intent: DatasetOps, sym: dict[str, str]) -> list[str]:
     result: list[str] = []
     for dd_name, dataset in intent.creates:
         dsn = resolve_symbols(dataset.dsn, sym)
-        result.append(f"# DD {dd_name}: Allocate dataset")
-        result.append(_build_dtouch(dataset, dsn))
+        result.extend((f"# DD {dd_name}: Allocate dataset", _build_dtouch(dataset, dsn)))
     for raw_dsn in intent.deletes:
         dsn = resolve_symbols(raw_dsn, sym)
-        result.append("# Delete dataset")
-        result.append(f'drm "{dsn}"')
+        result.extend(("# Delete dataset", f'drm "{dsn}"'))
     if not result:
         result.append("# IEFBR14 with no actionable DDs")
     return result
@@ -228,9 +226,6 @@ def _render_backup(intent: BackupRestore, sym: dict[str, str]) -> list[str]:
     return ["# ADRDSSU: Unknown operation"]
 
 
-# ZOAU-only converters (no Ansible module equivalent)
-
-
 def _convert_isrsupc(step: Step) -> list[str]:
     newdd = olddd = None
     sysin_data = get_sysin(step)
@@ -257,12 +252,10 @@ def _convert_isrsupc(step: Step) -> list[str]:
 
 
 def _render_iehlist(intent: IEHListOps) -> list[str]:
-    result: list[str] = []
-    for dsn in intent.pds_dsns:
-        result.append(f'mls "{dsn}"')
-    for vol in intent.vtoc_volumes:
-        result.append(f"vtocls {vol}")
-    return result
+    return [
+        *(f'mls "{dsn}"' for dsn in intent.pds_dsns),
+        *(f"vtocls {vol}" for vol in intent.vtoc_volumes),
+    ]
 
 
 def _render_iehprogm(intent: IEHPROGMOps) -> list[str]:

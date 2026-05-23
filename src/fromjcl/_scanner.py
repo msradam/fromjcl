@@ -157,9 +157,9 @@ class Stmt:
             "name": self.name,
             "lines": self.lines,
             "keyword_col": self.keyword_col,
-            "record_lens": list(self.record_lens),
-            "instream_records": list(self.instream_records),
-            "parameters": list(self.kvps),
+            "record_lens": self.record_lens.copy(),
+            "instream_records": self.instream_records.copy(),
+            "parameters": self.kvps.copy(),
             "scanned_lines": [
                 {
                     "parm_text": sl.parm_text,
@@ -201,7 +201,7 @@ def _skip_blanks(text: str, start: int, end: int) -> tuple[int, int]:
 
 
 def _is_name_char(c: str) -> bool:
-    return c.isupper() or c.isdigit() or c in NATIONAL
+    return (c.isascii() and c.isalpha()) or c.isdigit() or c in NATIONAL
 
 
 def _is_valid_name(buf: str) -> tuple[bool, int]:
@@ -209,7 +209,7 @@ def _is_valid_name(buf: str) -> tuple[bool, int]:
     if not buf:
         return False, 0
     c0 = buf[0]
-    if not (c0.isupper() or c0 in NATIONAL):
+    if not ((c0.isascii() and c0.isalpha()) or c0 in NATIONAL):
         return False, 0
 
     dot = 0
@@ -301,8 +301,7 @@ class Scanner:
         )
 
     def _append_scanned_comment(self, text: str, start: int, end: int) -> None:
-        """C appendScannedComment: strip blanks, append to last scan line's
-        comment_text, creating an empty comment string if needed."""
+        """C appendScannedComment."""
         start, end = _skip_blanks(text, start, end)
         chunk = text[start:end]
         tail = self._cur.scan_lines[-1]
@@ -393,8 +392,7 @@ class Scanner:
                 if (
                     dlm_orig is not None
                     and len(dlm_orig) == DELIM_LEN + 2
-                    and dlm_orig[0] == "'"
-                    and dlm_orig[-1] == "'"
+                    and dlm_orig[0] == dlm_orig[-1] == "'"
                 ):
                     dlm = dlm_orig[1:3]
                 else:
@@ -424,10 +422,14 @@ class Scanner:
             while i < end:
                 c = text[i]
                 if context == ParmContext.InKeyword:
-                    if c == "=":
+                    if c == "(":
+                        paren_nest += 1
+                    elif c == ")" and paren_nest > 0:
+                        paren_nest -= 1
+                    elif c == "=" and paren_nest == 0:
                         context = ParmContext.InValue
                         cur_value = i + 1
-                    elif c == ",":
+                    elif c == "," and paren_nest == 0:
                         if i + 1 == end:
                             comment = cur_line_comment
                             hn = True
@@ -584,7 +586,7 @@ class Scanner:
             self.state = ScanState.ContinueConditional
 
     def _scan_comment_stmt(self, text: str) -> None:
-        """//* comment. Comment text is cropped to the original line length."""
+        """Comment text is cropped to the original line length."""
         self._add_stmt("//*", None)
         raw_len = len(self._current_raw)
         content_end = max(PREFIX_LEN + 1, min(raw_len, JCL_RECLEN))
@@ -757,7 +759,13 @@ class Scanner:
 
     def _process_continued_comment(self, text: str) -> None:
         if text[0] != "/" or text[1] != "/" or text[2] != " ":
-            raise ValueError("Invalid continued comment record")
+            # A new JCL statement arrived while continuation was expected
+            # (e.g. a parameter line whose content reached col 72 set the
+            # flag spuriously). Treat this record as the start of a fresh
+            # statement rather than a hard error.
+            self.state = ScanState.NotContinued
+            self._process_jcl_record(text)
+            return
         self._add_to_stmt()
         self._scan_parameters(text, PREFIX_LEN + 1)
 
@@ -781,24 +789,22 @@ class Scanner:
     def _process_continued_parameter(self, text: str) -> None:
         # //* inside continued params: append to the current scan line's
         # comment_text with a leading newline. No addToStatement.
-        if text[0] == "/" and text[1] == "/" and text[2] == "*":
+        if text[0] == text[1] == "/" and text[2] == "*":
             tail = self._cur.scan_lines[-1]
             existing = tail.comment_text or ""
             tail.comment_text = existing + "\n"
             self._append_scanned_comment(text, PREFIX_LEN + 1, JCL_TXTLEN)
             return
         if text[0] != "/" or text[1] != "/" or text[2] != " ":
-            raise ValueError("Invalid continued parameter record")
+            # Same lenient recovery as _process_continued_comment.
+            self.state = ScanState.NotContinued
+            self._process_jcl_record(text)
+            return
         self._add_to_stmt()
         self._scan_parameters(text, PREFIX_LEN + 1)
 
     def _process_jes3_continued_dataset(self, text: str) -> None:
-        if (
-            text[0] == "/"
-            and text[1] == "/"
-            and text[2] == "*"
-            and _word_starts(text[3:], "ENDDATASET")
-        ):
+        if text[0] == text[1] == "/" and text[2] == "*" and _word_starts(text[3:], "ENDDATASET"):
             # C: addStatement(0, JES3_KEYWORD); opens a new //* stmt.
             self._add_stmt("//*", None)
             self.state = ScanState.NotContinued
@@ -827,7 +833,6 @@ class Scanner:
         else:
             raise RuntimeError(f"Unreachable scan state: {current}")
 
-        # Inline data lines go to instream_records; JCL records to record_lens.
         if len(self.stmts) > before:
             self._cur.record_lens.append(len(self._current_raw))
         elif self.stmts and was_inline:

@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+from rich.console import Console
+from rich.syntax import Syntax
 
 from fromjcl.models import Job
 from fromjcl.parser import parse, parse_bytes
@@ -41,6 +43,16 @@ class InputFormat(StrEnum):
 
 _ZOAU_FORMATS = {OutputFormat.mvscmd, OutputFormat.zoau}
 
+_RICH_LEXERS: dict[OutputFormat, str] = {
+    OutputFormat.json: "json",
+    OutputFormat.yaml: "yaml",
+    OutputFormat.jcl: "jcl",
+    OutputFormat.zoau: "bash",
+    OutputFormat.mvscmd: "bash",
+}
+
+_console = Console()
+
 
 def _require_extra(extra: str, marker_module: str) -> None:
     """Exit with help if pip install fromjcl[<extra>] hasn't been run."""
@@ -55,12 +67,19 @@ def _require_extra(extra: str, marker_module: str) -> None:
         raise typer.Exit(code=2) from None
 
 
-def _write_output(output: str, dest: str | None) -> None:
+def _write_output(output: str, dest: str | None, fmt: OutputFormat | None = None) -> None:
     """Write output to a file or stdout. Both paths ensure exactly one
-    trailing newline so piping `--to jcl` matches the `-o file` form."""
+    trailing newline so piping `--to jcl` matches the `-o file` form.
+    When writing to a terminal, syntax-highlights via Rich."""
     text = output if output.endswith("\n") else output + "\n"
     if dest:
         Path(dest).write_text(text)
+        return
+    lexer = _RICH_LEXERS.get(fmt) if fmt else None
+    if lexer and _console.is_terminal:
+        _console.print(
+            Syntax(text.rstrip("\n"), lexer, theme="monokai", background_color="default")
+        )
     else:
         sys.stdout.write(text)
 
@@ -121,7 +140,7 @@ def convert(
         except (ValueError, KeyError) as e:
             typer.echo(f"Error: {e}", err=True)
             raise typer.Exit(code=1) from e
-        _write_output(result, output)
+        _write_output(result, output, OutputFormat.jcl)
         return
 
     try:
@@ -159,7 +178,7 @@ def convert(
     else:  # pragma: no cover - Enum exhaustiveness; defensive default.
         result = ""
 
-    _write_output(result, output)
+    _write_output(result, output, to)
 
     if warnings:
         typer.echo(f"fromjcl: validation failed ({len(warnings)} issue(s)):", err=True)
