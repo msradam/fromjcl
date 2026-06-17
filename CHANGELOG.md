@@ -4,6 +4,15 @@
 
 ### Added
 
+- **EBCDIC input support.** `parse()` and `parse_bytes()` now accept an
+  `encoding` parameter (`"auto"` | `"ebcdic"` | `"cp037"` | `"cp500"` |
+  `"cp1047"`). Auto-detection checks for the EBCDIC `//` file signature
+  (bytes `0x61 0x61`) and decodes with cp037 by default, handling both
+  variable-length (NL-separated) and fixed 80-byte records. `cp1047` is
+  accepted as an alias for cp037 (JCL characters are identical in both
+  code pages). The CLI gains a matching `--encoding` flag. The z/OS
+  `iconv` pre-processing step is no longer required for binary-transferred
+  JCL.
 - **`DD.instream_dlm`** field on the `DD` model: custom `DLM=` delimiters
   are now preserved through the forward pass. JSON, YAML, and CSV
   serialisers include the value; the rejcl reverse path emits `DATA,DLM='XX'`

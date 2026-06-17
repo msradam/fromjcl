@@ -14,11 +14,11 @@ from fromjcl._scanner import parse as _parse
 from fromjcl._scanner import parse_bytes as _parse_bytes
 
 
-def parse(path: str) -> dict[str, Any]:
+def parse(path: str, encoding: str = "auto") -> dict[str, Any]:
     """Raw scan tree from a JCL file; pass to Job.from_parsed() for the typed model."""
-    return _parse(path)
+    return _parse(path, encoding)
 
 
-def parse_bytes(data: bytes) -> dict[str, Any]:
+def parse_bytes(data: bytes, encoding: str = "auto") -> dict[str, Any]:
     """Parse JCL from a bytes buffer. Returns the same scan tree shape as parse()."""
-    return _parse_bytes(data)
+    return _parse_bytes(data, encoding)

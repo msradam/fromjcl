@@ -42,6 +42,16 @@ class InputFormat(StrEnum):
     csv = "csv"
 
 
+class Encoding(StrEnum):
+    """Input byte encoding. 'auto' detects EBCDIC by file signature."""
+
+    auto = "auto"
+    ebcdic = "ebcdic"
+    cp037 = "cp037"
+    cp500 = "cp500"
+    cp1047 = "cp1047"
+
+
 _ZOAU_FORMATS = {OutputFormat.mvscmd, OutputFormat.zoau}
 
 _RICH_LEXERS: dict[OutputFormat, str] = {
@@ -136,6 +146,10 @@ def convert(
         bool,
         typer.Option("--strict/--no-strict", help="Exit non-zero on validation warnings."),
     ] = True,
+    encoding: Annotated[
+        Encoding,
+        typer.Option("--encoding", help="Input encoding (auto detects EBCDIC by file signature)."),
+    ] = Encoding.auto,
 ) -> None:
     """Parse IBM z/OS JCL and serialize to JSON, YAML, CSV, or roundtrip JCL."""
     if rejcl:
@@ -164,9 +178,9 @@ def convert(
             if raw_bytes is None:
                 _err("no input: provide a file path or pipe data to stdin")
                 raise typer.Exit(code=2)
-            parsed = parse_bytes(raw_bytes)
+            parsed = parse_bytes(raw_bytes, encoding)
         else:
-            parsed = parse(input)
+            parsed = parse(input, encoding)
     except (RuntimeError, OSError) as e:
         _err(str(e))
         raise typer.Exit(code=1) from e

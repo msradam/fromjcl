@@ -23,6 +23,12 @@ EMPTY_DELIM = "  "
 
 NATIONAL = frozenset("@$#")
 
+_EBCDIC_SLASH = 0x61  # EBCDIC '/' shared by cp037/cp500/cp1047
+_EBCDIC_CODECS = frozenset({"cp037", "cp500"})
+# cp1047 maps JCL characters identically to cp037; remap for portability
+# (cp1047 is absent from some Python builds, including CPython 3.14 on macOS).
+_EBCDIC_ALIASES: dict[str, str] = {"ebcdic": "cp037", "cp1047": "cp037"}
+
 _KEYWORDS_FULL = [
     "DD",
     "EXEC",
@@ -241,23 +247,48 @@ def _word_starts(buf: str, word: str) -> bool:
     return buf.startswith(word)
 
 
-def _records_from_bytes(raw: bytes) -> Iterator[tuple[str, str]]:
-    """Yield (original, padded) per record. CRLF is normalised."""
-    raw = raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
-    # \x1a is the DOS/EBCDIC EOF sentinel. Truncate so it does not
-    # land in synthetic SYSIN.
-    eof = raw.find(b"\x1a")
-    if eof != -1:
-        raw = raw[:eof]
-    lines = raw.split(b"\n")
-    if lines and lines[-1] == b"":
-        lines.pop()
-    for line in lines:
-        text = line.decode("latin-1", errors="replace")
-        if len(text) > JCL_RECLEN:
-            text = text[:JCL_RECLEN]
-        padded = text.ljust(JCL_RECLEN, " ")
-        yield text, padded
+def _resolve_encoding(raw: bytes, encoding: str) -> str:
+    """Resolve 'auto' and known aliases to a concrete codec name."""
+    if encoding == "auto":
+        return (
+            "cp037"
+            if (len(raw) >= 2 and raw[0] == _EBCDIC_SLASH and raw[1] == _EBCDIC_SLASH)
+            else "latin-1"
+        )
+    return _EBCDIC_ALIASES.get(encoding, encoding)
+
+
+def _records_from_bytes(raw: bytes, encoding: str = "auto") -> Iterator[tuple[str, str]]:
+    """Yield (original, padded) per record. CRLF and EBCDIC NL are normalised."""
+    resolved = _resolve_encoding(raw, encoding)
+    if resolved in _EBCDIC_CODECS:
+        decoded = raw.decode(resolved, errors="replace").replace("\x85", "\n")
+        if "\n" in decoded:
+            lines_text = decoded.split("\n")
+            if lines_text and lines_text[-1] == "":
+                lines_text.pop()
+        else:
+            lines_text = [decoded[i : i + JCL_RECLEN] for i in range(0, len(decoded), JCL_RECLEN)]
+        for text in lines_text:
+            if len(text) > JCL_RECLEN:
+                text = text[:JCL_RECLEN]
+            padded = text.ljust(JCL_RECLEN, " ")
+            yield text, padded
+    else:
+        raw = raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+        # \x1a is the DOS EOF sentinel. Truncate so it does not land in synthetic SYSIN.
+        eof = raw.find(b"\x1a")
+        if eof != -1:
+            raw = raw[:eof]
+        lines = raw.split(b"\n")
+        if lines and lines[-1] == b"":
+            lines.pop()
+        for line in lines:
+            text = line.decode(resolved, errors="replace")
+            if len(text) > JCL_RECLEN:
+                text = text[:JCL_RECLEN]
+            padded = text.ljust(JCL_RECLEN, " ")
+            yield text, padded
 
 
 class Scanner:
@@ -847,14 +878,14 @@ class Scanner:
             self._cur.record_lens.append(len(self._current_raw))
 
 
-def parse_bytes(data: bytes) -> dict[str, Any]:
+def parse_bytes(data: bytes, encoding: str = "auto") -> dict[str, Any]:
     """Parse JCL from a bytes buffer."""
     scanner = Scanner()
-    for original, padded in _records_from_bytes(data):
+    for original, padded in _records_from_bytes(data, encoding):
         scanner.process_record(padded, raw=original)
     return {"statements": [s.to_dict() for s in scanner.stmts]}
 
 
-def parse(path: str) -> dict[str, Any]:
+def parse(path: str, encoding: str = "auto") -> dict[str, Any]:
     """Parse JCL from a file path."""
-    return parse_bytes(Path(path).read_bytes())
+    return parse_bytes(Path(path).read_bytes(), encoding)

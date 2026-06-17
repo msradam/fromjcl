@@ -154,9 +154,20 @@ dataclass equality across the entire IBM/community/ZOAU corpus.
 
 ## z/OS notes
 
-JCL input is read with standard z/OS UNIX semantics. If you hit a
-silent decode failure, check the file tag (`ls -T`) and convert to
-ASCII (`iconv -f IBM-1047 -t ISO8859-1`) before running.
+`fromjcl` reads EBCDIC-encoded JCL natively. Binary-transferred JCL files
+(not auto-converted by the z/OS UNIX shell) are detected by their `//`
+byte signature (EBCDIC `0x61 0x61`) and decoded as cp037 by default. All
+characters that appear in JCL syntax have identical byte values in cp037,
+cp500, and cp1047, so the choice of code page rarely matters for parsing.
+
+If auto-detection picks the wrong code page, pass `--encoding` explicitly:
+
+```bash
+fromjcl job.jcl --encoding cp037   # EBCDIC US/Canada (default)
+fromjcl job.jcl --encoding cp500   # EBCDIC International
+fromjcl job.jcl --encoding cp1047  # z/OS Open Systems (remapped to cp037)
+fromjcl job.jcl --encoding ebcdic  # alias for cp037
+```
 
 If `pip install` itself trips over EBCDIC tagging, set
 `_BPXK_AUTOCVT=ON` in the install shell.
