@@ -243,10 +243,6 @@ def _word_eq(buf: str, word: str) -> bool:
     return buf.startswith(word) and len(buf) > len(word) and buf[len(word)] == " "
 
 
-def _word_starts(buf: str, word: str) -> bool:
-    return buf.startswith(word)
-
-
 def _resolve_encoding(raw: bytes, encoding: str) -> str:
     """Resolve 'auto' and known aliases to a concrete codec name."""
     if encoding == "auto":
@@ -640,7 +636,7 @@ class Scanner:
     def _scan_jes3_control(self, text: str, column: int) -> None:
         self._add_stmt("//*", None)
         body = text[column:]
-        if _word_starts(body, "DATASET"):
+        if body.startswith("DATASET"):
             self.state = ScanState.ContinueJES3Dataset
         else:
             raw_len = len(self._current_raw)
@@ -740,11 +736,11 @@ class Scanner:
         body = text[column:]
         if body.startswith("*") and len(body) > 1 and body[1] == "*":
             return False
-        return any(_word_starts(body, kw) for kw in _JES3_PREFIXES)
+        return any(body.startswith(kw) for kw in _JES3_PREFIXES)
 
     def _is_jes2_control(self, text: str, column: int) -> bool:
         body = text[column:]
-        return any(_word_starts(body, kw) for kw in _JES2_PREFIXES)
+        return any(body.startswith(kw) for kw in _JES2_PREFIXES)
 
     def _generate_sysin(self, text: str) -> None:
         """Synthetic //SYSIN DD * for data with no DD card."""
@@ -841,7 +837,7 @@ class Scanner:
         self._scan_parameters(text, PREFIX_LEN + 1)
 
     def _process_jes3_continued_dataset(self, text: str) -> None:
-        if text[0] == text[1] == "/" and text[2] == "*" and _word_starts(text[3:], "ENDDATASET"):
+        if text[0] == text[1] == "/" and text[2] == "*" and text[3:].startswith("ENDDATASET"):
             # C: addStatement(0, JES3_KEYWORD); opens a new //* stmt.
             self._add_stmt("//*", None)
             self.state = ScanState.NotContinued

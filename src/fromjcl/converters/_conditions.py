@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Translate JCL IF-condition strings to shell (( ... )) and Ansible when:.
+"""Translate JCL IF-condition strings to shell (( ... )) expressions.
 
 STEP.ABEND approximates as rc != 0. STEP.RUN approximates as true.
 STEP.ABENDCC=... approximates as rc != 0. Each approximation is flagged
@@ -84,45 +84,9 @@ def to_shell(jcl_cond: str) -> str:
     return s
 
 
-def to_ansible(jcl_cond: str) -> str:
-    """Translate to a Jinja2-style when: expression."""
-    s = jcl_cond
-
-    def _ref(m: re.Match[str]) -> str:
-        name = m.group(1).lower().replace(".", "_")
-        kind = m.group(2)
-        if kind == "RC":
-            return f"{name}.rc"
-        if kind == "ABEND":
-            return f"{name}.failed"
-        if kind == "RUN":
-            return "true"
-        # ABENDCC: approximate as .failed; literal stays so the expression parses.
-        return f"{name}.failed"
-
-    s = _step_ref_re().sub(_ref, s)
-    s = _normalise_ops(s)
-
-    s = re.sub(r"\bAND\b", "and", s)
-    s = re.sub(r"\bOR\b", "or", s)
-    s = re.sub(r"\bNOT\b", "not", s)
-    s = re.sub(r"(?<!&)&(?!&)", " and ", s)
-    s = re.sub(r"(?<!\|)\|(?!\|)", " or ", s)
-    s = s.replace("¬", "not ")
-    # Tidy whitespace around binary ops.
-    s = re.sub(r"\s*(==|!=|<=|>=|<|>)\s*", r" \1 ", s)
-    s = re.sub(r"\s+", " ", s).strip()
-    return s
-
-
 def shell_var(step_name: str) -> str:
     """Shell variable name holding the return code for step_name."""
     return f"{step_name.lower()}_rc"
-
-
-def ansible_register(step_name: str) -> str:
-    """Ansible register: variable name for the task result of step_name."""
-    return step_name.lower()
 
 
 def group_consecutive_by_condition[T](
